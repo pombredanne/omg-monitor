@@ -6,7 +6,7 @@ This program uses [NuPIC] to catch anomalies in Pingdom monitored response times
 Input
 -----
 
-The input are response times gathered by Pingdom, which we use Dan Craig's [python-restful-pingdom] to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
+The input are response times gathered by Pingdom. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
 after which it starts learning online, making a request per minute per check to Pingdom. 
 
 Output

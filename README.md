@@ -6,7 +6,7 @@ This program uses [NuPIC] to catch anomalies in Pingdom monitored response times
 Input
 -----
 
-The input are response times gathered by Pingdom, which we use Dan Craig's [python-restful-pingdom] to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
+The input are response times gathered by Pingdom. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
 after which it starts learning online, making a request per minute per check to Pingdom. 
 
 Output
@@ -78,6 +78,32 @@ To build the Docker image locally, clone this repository and do:
     sudo docker build -t "[USERNAME]/monitor" .
 
 Note that our [Dockerfile] uses the [allanino/nupic] image, as that image already contains a NuPIC installation.
+
+License
+-------
+```
+The MIT License (MIT)
+
+Copyright (c) 2013 Allan Inocencio de Souza Costa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+```
 
 [NuPIC]:https://github.com/numenta/nupic
 [Dockerfile]:https://github.com/allanino/omg-monitor/blob/master/Dockerfile

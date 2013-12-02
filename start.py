@@ -39,7 +39,8 @@ if __name__ == "__main__":
         # get just the checks
         checks = checks['checks']
 
-        # write the checks to redis
+        # flush redis db and write the checks in it
+        _REDIS_SERVER.flushdb()
         for check in checks:
             _REDIS_SERVER.rpush("checks", check['id'])
             _REDIS_SERVER.set("check:%s" % check['id'], check['name'])

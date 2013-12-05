@@ -1,12 +1,12 @@
 OMG Monitor
 ==========
 
-This program uses [NuPIC] to catch anomalies in Pingdom monitored response times. It runs as a [Docker] container, so to use it you just have to run the container (see [Usage](#usage)).
+This program uses [NuPIC] to catch anomalies in [Pingdom] monitored response times. It runs as a [Docker] container, so to use it you just have to run the container (see [Usage](#usage)).
 
 Input
 -----
 
-The input are response times gathered by Pingdom. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
+The input are response times gathered by [Pingdom]. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
 after which it starts learning online, making a request per minute per check to Pingdom. 
 
 Output
@@ -106,17 +106,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
 [NuPIC]:https://github.com/numenta/nupic
+[Docker]:https://www.docker.io/
+[Pingdom]:https://www.pingdom.com/
+[Redis]:http://redis.io/
+[Martini]:https://github.com/codegangsta/martini
+[Go]:http://golang.org/
+[D3.js]:http://d3js.org/
+[jQuery]:http://jquery.com/
+[python-restful-pingdom]:https://github.com/drcraig/python-restful-pingdom
+[allanino/nupic]:https://github.com/allanino/docker-nupic
+
 [Dockerfile]:https://github.com/allanino/omg-monitor/blob/master/Dockerfile
 [monitor.py]:https://github.com/allanino/omg-monitor/blob/master/monitor/monitor.py
-[allanino/nupic]:https://github.com/allanino/docker-nupic
 [start.py]:https://github.com/allanino/omg-monitor/blob/master/start.py
-[python-restful-pingdom]:https://github.com/drcraig/python-restful-pingdom
-[Go]:http://golang.org/
-[Redis]:http://redis.io/
-[jQuery]:http://jquery.com/
-[Martini]:https://github.com/codegangsta/martini
-[Docker]:https://www.docker.io/
 [startup.sh]:https://github.com/allanino/omg-monitor/blob/master/startup.sh
-[D3.js]:http://d3js.org/
 [1]:https://github.com/allanino/omg-monitor/blob/master/server/public/index.html
 [2]:https://index.docker.io/u/allanino/monitor/
+

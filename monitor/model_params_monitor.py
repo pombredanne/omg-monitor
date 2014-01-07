@@ -21,13 +21,23 @@ MODEL_PARAMS = {
                 'verbosity': 0, 
                 'encoders': {
                     u'responsetime': {
-                        'maxval': 600, 
-                        'name': 'responsetime', 
-                        'clipInput': True, 
-                        'minval': 1, 
-                        'n': 721, 
-                        'fieldname': 'responsetime', 
-                        'w': 21, 'type': 'ScalarEncoder'}
+                        'fieldname': u'responsetime',
+                        'resolution': 50.0,
+                        'seed': 1,
+                        'name': u'responsetime',
+                        'type': 'RandomDistributedScalarEncoder'},
+                    # 'timestamp_dayOfWeek': {   'dayOfWeek': (21, 1),
+                    #                        'fieldname': u'time',
+                    #                        'name': u'timestamp_dayOfWeek',
+                    #                        'type': 'DateEncoder'},
+                    # 'timestamp_timeOfDay': {   'fieldname': u'time',
+                    #                        'name': u'timestamp_timeOfDay',
+                    #                        'timeOfDay': (21, 1),
+                    #                        'type': 'DateEncoder'},
+                    # 'timestamp_weekend': {   'fieldname': u'time',
+                    #                      'name': u'timestamp_weekend',
+                    #                      'type': 'DateEncoder',
+                    #                      'weekend': 21}
                         }, 
                 'sensorAutoReset': None}, 
 

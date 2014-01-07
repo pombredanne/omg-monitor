@@ -22,7 +22,7 @@
 
 """A simple client to create a CLA model for Monitor."""
 
-import datetime
+from datetime import datetime
 from collections import deque
 import sys
 import thread
@@ -50,7 +50,7 @@ except redis.ConnectionError:
     sys.exit(0)
 
 def moving_average(data):
-    """ Used to eventually smooth input data """
+    """ Used to eventually smooth input data. Not used now. """
     return sum(data)/len(data) if len(data) > 0 else 0.0 
 
 def create_model():
@@ -67,6 +67,7 @@ def run(check_id, check_name, username, password, appkey):
     shifter = InferenceShifter()
 
     model = create_model() # Create the CLA model
+
     model.enableInference({'predictedField': 'responsetime'})
 
     # Moving average window for response time smoothing (higher means smoother)
@@ -76,10 +77,11 @@ def run(check_id, check_name, username, password, appkey):
 
     print "[%s] Getting last 5000 results" % check_name
     sys.stdout.flush()
-    # Get last 5000 resuts for check
+
+    # Get past resuts for check
     results = deque()
     i = 0
-    while i < 5:
+    while i < 6:
         try:
             pingdomResult = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
         except Exception:
@@ -92,13 +94,13 @@ def run(check_id, check_name, username, password, appkey):
 
     servertime = None 
     for modelInput in results:
-        # If not have response time is because it's not up, so set it to a large number
+        # If dont' have response time is because it's not up, so set it to a large number
         if 'responsetime' not in modelInput:
             modelInput['responsetime'] = _TIMEOUT
 
-        history.append(round(float(modelInput['responsetime'])/100.))
-        modelInput['responsetime'] = int( moving_average(history) + 0.5 )
-        servertime = modelInput['time'] = int(modelInput['time'])
+        modelInput['responsetime'] = int(modelInput['responsetime'])
+        servertime  = int(modelInput['time'])
+        modelInput['time'] = datetime.utcfromtimestamp(servertime)
 
         # Pass the input to the model
         result = model.run(modelInput)
@@ -106,14 +108,14 @@ def run(check_id, check_name, username, password, appkey):
         result = shifter.shift(result)
         # Save multi step predictions 
         inference = result.inferences['multiStepPredictions']
-
-        print("[%s] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(modelInput['time']  - _UTC_OFFSET)))
+       
+        print("[%s] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime  - _UTC_OFFSET)))
         sys.stdout.flush()
 
         if inference[1]:
             try:
                 # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (modelInput['time'],modelInput['status'],result.rawInput['responsetime']*100,result.inferences['multiStepBestPredictions'][1]*100,result.inferences['anomalyScore']))
+                _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
             except Exception:
                 print "[%s] Could not write results to redis." % check_name
                 sys.stdout.flush()
@@ -132,30 +134,31 @@ def run(check_id, check_name, username, password, appkey):
             sleep(_SECONDS_PER_REQUEST)
             continue
         
-        # If any result contains new responses (ahead of [servetime]) process it
+        # If any result contains new responses (ahead of [servetime]) process it. 
+        # We check the last 5 results, so that we don't lose data points.
         for modelInput in [pingdomResults[4], pingdomResults[3], pingdomResults[2], pingdomResults[1], pingdomResults[0]]:
             if servertime < int(modelInput['time']):
                 # Update servertime
-                servertime = int(modelInput['time'])
+                servertime  = int(modelInput['time'])
+                modelInput['time'] = datetime.utcfromtimestamp(servertime)
 
                 # If not have response time is because it's not up, so set it to a large number
                 if 'responsetime' not in modelInput:
                     modelInput['responsetime'] = _TIMEOUT
 
-                modelInput['responsetime'] = int(round(float(modelInput['responsetime'])/100.))
-
+                modelInput['responsetime'] = int(modelInput['responsetime'])
                 # Run the model
                 result = model.run(modelInput)
                 result = shifter.shift(result)
                 inference = result.inferences['multiStepPredictions']
                 
-                print("[%s][online] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(modelInput['time'] - _UTC_OFFSET)))
+                print("[%s][online] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime - _UTC_OFFSET)))
                 sys.stdout.flush()
                 
                 if inference[1]:
                     try:
                         # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                        _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (modelInput['time'],modelInput['status'],result.rawInput['responsetime']*100,result.inferences['multiStepBestPredictions'][1]*100,result.inferences['anomalyScore']))
+                        _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
                     except Exception:
                         print "[%s] Could not write results to redis." % check_name
                         sys.stdout.flush()

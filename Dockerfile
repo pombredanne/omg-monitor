@@ -6,15 +6,15 @@ MAINTAINER Allan Costa <allan@yahoo.com.br>
 RUN \
     pip install redis;\
 
+    wget http://go.googlecode.com/files/go1.1.2.linux-amd64.tar.gz;\
+    tar -C /usr/local -xzf go1.1.2.linux-amd64.tar.gz;\
+    rm go1.1.2.linux-amd64.tar.gz;\
+    
     wget http://download.redis.io/releases/redis-2.6.16.tar.gz;\
     tar -xzf redis-2.6.16.tar.gz;\
     cd redis-2.6.16;\
     make;\
     rm ../redis-2.6.16.tar.gz;\
-
-    wget http://go.googlecode.com/files/go1.1.2.linux-amd64.tar.gz;\
-    tar -C /usr/local -xzf go1.1.2.linux-amd64.tar.gz;\
-    rm go1.1.2.linux-amd64.tar.gz;\
 #RUN
 
 # Add redis and go to path

@@ -1,4 +1,4 @@
-FROM allanino/nupic
+FROM numenta/nupic
 
 MAINTAINER Allan Costa <allan@yahoo.com.br>
 

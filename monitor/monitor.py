@@ -84,8 +84,9 @@ def run(check_id, check_name, username, password, appkey):
     while i < 6:
         try:
             pingdomResult = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
-        except Exception:
+        except Exception, e:
             print "[%s] Could not get Pingdom results." % check_name
+            print e
             sleep(_SECONDS_PER_REQUEST)
             continue
         for result in pingdomResult['results']:
@@ -116,8 +117,9 @@ def run(check_id, check_name, username, password, appkey):
             try:
                 # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
                 _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
-            except Exception:
+            except Exception, e:
                 print "[%s] Could not write results to redis." % check_name
+                print e
                 sys.stdout.flush()
                 continue
 
@@ -129,13 +131,14 @@ def run(check_id, check_name, username, password, appkey):
         # Call Pingdom for the last 5 results for check_id
         try:
             pingdomResults = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 5})['results']
-        except Exception:
+        except Exception, e:
             print "[%s][online] Could not get Pingdom results." % check_name
+            print e
             sleep(_SECONDS_PER_REQUEST)
             continue
         
         # If any result contains new responses (ahead of [servetime]) process it. 
-        # We check the last 5 results, so that we don't lose data points.
+        # We check the last 5 results, so that we don't many lose data points.
         for modelInput in [pingdomResults[4], pingdomResults[3], pingdomResults[2], pingdomResults[1], pingdomResults[0]]:
             if servertime < int(modelInput['time']):
                 # Update servertime
@@ -159,8 +162,9 @@ def run(check_id, check_name, username, password, appkey):
                     try:
                         # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
                         _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
-                    except Exception:
+                    except Exception, e:
                         print "[%s] Could not write results to redis." % check_name
+                        print e
                         sys.stdout.flush()
                         continue
         # Wait until next request

@@ -31,6 +31,7 @@ type ResultType struct {
     Actual int64 `json:"actual"`
     Predicted int64 `json:"predicted"`
     Anomaly float64 `json:"anomaly"`
+    Likelihood float64 `json:"likelihood"`
 }
 
 const (
@@ -97,8 +98,9 @@ func getJsonResults(redisResponse []interface{}) []byte {
         actual, _ := strconv.ParseInt(fields[2], 10, 64)
         predicted, _ := strconv.ParseInt(fields[3], 10, 64)
         anomaly, _ := strconv.ParseFloat(fields[4], 64)
+        likelihood, _ := strconv.ParseFloat(fields[5], 64)
 
-        results[k] = ResultType{time, status, actual, predicted, anomaly}
+        results[k] = ResultType{time, status, actual, predicted, anomaly, likelihood}
     }
 
     b,_ := json.MarshalIndent(Results{results}, "", "  ")
@@ -149,5 +151,8 @@ func main() {
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")
-    http.ListenAndServe("0.0.0.0:5000", m)
+    err := http.ListenAndServe("0.0.0.0:5000", m)
+    if err != nil {
+        fmt.Printf("Error: %s", err)
+    }
 }

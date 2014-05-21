@@ -86,21 +86,11 @@ if __name__ == "__main__":
         # get just the checks
         checks = checks['checks']
 
-        # write the checks to redis
-        for check in checks:
-            _REDIS_SERVER.rpush("checks", check['id'])
-            _REDIS_SERVER.set("check:%s" % check['id'], check['name'])
-
         # threads list
         threads = []
-
-        # # Start the Flask server
-        # print "Starting Flask..."
-        # sys.stdout.flush()
-
-        # threads.append(Process(target=flask_server.app.run, args=('0.0.0.0',)))
-        # threads[len(threads)-1].start()
         
+        _REDIS_SERVER.flushdb()
+         
         # Start the monitors sessions
         for id in sys.argv[4:]:
             check_id = int(id)
@@ -117,6 +107,9 @@ if __name__ == "__main__":
                 print "Skipping this one."
                 sys.stdout.flush()
                 continue
+            else: # Write check to Redis only if it exists and if is monitoring
+                _REDIS_SERVER.rpush("checks", check_id)
+                _REDIS_SERVER.set("check:%s" % check_id, check_name)
             
             print "[%s] Starting..." % check_name
             sys.stdout.flush()

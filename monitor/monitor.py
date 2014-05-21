@@ -34,6 +34,7 @@ import model_params_monitor # file containing CLA parameters
 
 import redis
 from utils import pingdom # Pingdom API wrapper
+from utils import anomaly_likelihood
 
 _UTC_OFFSET = 10800 # Time zone offset (-3:00 GMT for Sao Paulo/Brazil)
 _TIMEOUT = 60000 # Default response time when status is not 'up' (ms)
@@ -65,6 +66,10 @@ def run(check_id, check_name, username, password, appkey):
 
     # The shifter is used to bring the predictions to the actual time frame
     shifter = InferenceShifter()
+
+    
+    # The anomaly likelihood object
+    anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
 
     model = create_model() # Create the CLA model
 
@@ -109,6 +114,11 @@ def run(check_id, check_name, username, password, appkey):
         result = shifter.shift(result)
         # Save multi step predictions 
         inference = result.inferences['multiStepPredictions']
+        # Take the anomaly_score
+        anomaly_score = result.inferences['anomalyScore']
+        # Compute the Anomaly Likelihood
+        likelihood = anomalyLikelihood.anomalyProbability(
+            modelInput['responsetime'], anomaly_score, modelInput['time'])
        
         print("[%s] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime  - _UTC_OFFSET)))
         sys.stdout.flush()
@@ -116,7 +126,7 @@ def run(check_id, check_name, username, password, appkey):
         if inference[1]:
             try:
                 # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
+                _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.4f,%.4f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],anomaly_score, likelihood))
             except Exception, e:
                 print "[%s] Could not write results to redis." % check_name
                 print e
@@ -150,10 +160,18 @@ def run(check_id, check_name, username, password, appkey):
                     modelInput['responsetime'] = _TIMEOUT
 
                 modelInput['responsetime'] = int(modelInput['responsetime'])
-                # Run the model
+
+                # Pass the input to the model
                 result = model.run(modelInput)
+                # Shift results
                 result = shifter.shift(result)
+                # Save multi step predictions 
                 inference = result.inferences['multiStepPredictions']
+                # Take the anomaly_score
+                anomaly_score = result.inferences['anomalyScore']
+                # Compute the Anomaly Likelihood
+                likelihood = anomalyLikelihood.anomalyProbability(
+                    modelInput['responsetime'], anomaly_score, modelInput['time'])
                 
                 print("[%s][online] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime - _UTC_OFFSET)))
                 sys.stdout.flush()
@@ -161,7 +179,7 @@ def run(check_id, check_name, username, password, appkey):
                 if inference[1]:
                     try:
                         # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                        _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.2f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],result.inferences['anomalyScore']))
+                        _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.4f,%.4f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],anomaly_score, likelihood))
                     except Exception, e:
                         print "[%s] Could not write results to redis." % check_name
                         print e

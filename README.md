@@ -13,7 +13,7 @@ after which it starts learning online, making a request per minute per check to 
 
 ## Output
 
-The calculated anomaly score for each input (plus some information) is stored in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,status,actual,predicted,anomaly"` with keys of the form `"results:[CHECK_ID]"`.
+The calculated anomaly score for each input (plus some information) is stored in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,status,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[CHECK_ID]"`.
 
 ## API
 

@@ -1,0 +1,39 @@
+{
+  "includedFields": [
+    {
+      "fieldName": "time", 
+      "fieldType": "datetime"
+    }, 
+    {
+      "fieldName": "status",
+      "fieldType": "string"
+    },
+    {
+      "fieldName": "responsetime",
+      "fieldType": "float",
+      "encoderType": "RandomDistributedScalarEncoder"
+    }
+  ], 
+  "streamDef": {
+    "info": "test", 
+    "version": 1, 
+    "streams": [
+      {
+        "info": "dataset.csv",
+        "source": "file://dataset.csv", 
+        "columns": [
+          "*"
+        ] 
+      }
+    ]
+  }, 
+  "inferenceType": "TemporalAnomaly", 
+  "inferenceArgs": {
+    "predictionSteps": [
+      1
+    ], 
+    "predictedField": "responsetime"
+  }, 
+  "iterationCount": -1, 
+  "swarmSize": "medium"
+}

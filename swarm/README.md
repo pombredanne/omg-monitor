@@ -28,7 +28,7 @@ $NUPIC/build/release/lib/python2.7/site-packages/nupic/frameworks/opf/exp_genera
 
 * We run the swarm from the swarm directory:
 ```
-$NUPIC/bin/run_swarm permutations.py --maxWorkers=4
+$NUPIC/bin/run_swarm.py permutations.py --maxWorkers=4
 ```
 
 * We copy the `model_0/model_params.py` file and replace the old one:

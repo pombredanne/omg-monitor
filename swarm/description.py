@@ -111,12 +111,14 @@ config = {
     'name': u'status',
     'type': 'SDRCategoryEncoder',
     'w': 21},
-  u'responsetime':     { 
+  u'responsetime':     {   'clipInput': False,
     'fieldname': u'responsetime',
-    'resolution': 10,
+    'n': 100,
+    'minval': 0,
+    'maxval': 60000,
     'name': u'responsetime',
-    'type': 'RandomDistributedScalarEncoder'
-        },
+    'type': u'ScalarEncoder',
+    'w': 21},
             },
 
             # A dictionary specifying the period for automatically-generated

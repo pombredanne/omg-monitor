@@ -11,7 +11,7 @@
     {
       "fieldName": "responsetime",
       "fieldType": "float",
-      "encoderType": "RandomDistributedScalarEncoder"
+      "encoderType": "ScalarEncoder"
     }
   ], 
   "streamDef": {

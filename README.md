@@ -8,12 +8,12 @@ Here is a simplified flowchart of the project:
 
 ## Input
 
-The input are response times gathered by [Pingdom]. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 5000 response times of the specified checks,
+The inputs are response times gathered by [Pingdom]. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 1440 response times of the specified checks,
 after which it starts learning online, making a request per minute per check to Pingdom. 
 
 ## Output
 
-The calculated anomaly score for each input (plus some information) is stored in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,status,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[CHECK_ID]"`.
+NuPIC calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,status,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[CHECK_ID]"`.
 
 ## API
 
@@ -35,6 +35,7 @@ The JSON string returned contains only the IDs and names of the checks.
   * actual: Actual response time at the given time instant.
   * predicted: Response time prediction for the given time instant.
   * anomaly: the unlikelihood of the actual result in comparisson with the predicted result.
+  * likelihood: the likelihood that the last anomaly score follows the historical probability distribution.
   * status: status of the server as returned by Pingdom (up, down, unconfirmed_down).
   * time: UNIX time when Pingdom got the actual response time.
   If no limit is specified it is assumed that `N=0`, so that the API returns all the results for the given `CHECK_ID`.

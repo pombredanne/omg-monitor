@@ -1,0 +1,127 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>Likelihood Gauge</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    
+    <script src="js/raphael.2.1.0.min.js"></script>
+    <script src="js/justgage.1.0.1.min.js"></script>
+    <script src="js/jquery-1.11.1.min.js"></script>
+
+    <script type="text/javascript">
+    jQuery.ajaxSetup({async:false});
+
+    // Function to display individuals gauge charts
+    function displayGraph(id, check_id, check_name, updateDelay) {
+      // Get the data
+      var data = [];
+
+      $(document).ready(function(){
+          $.getJSON( "/results/" + check_id + "?limit=1", function( dataset ) {
+              data = dataset.results
+          });
+      });
+
+      // Convert the data
+      data.forEach(function(d) {
+        d.actual = parseFloat(d.actual)
+        d.predicted = parseFloat(d.predicted)
+        d.anomaly = parseFloat(d.likelihood)
+        d.time = new Date(d.time*1000)
+      });
+
+        var g = new JustGage({
+          id: "g"+id, 
+          value: 0, 
+          min: 0,
+          max: 100,
+          title: check_name,
+          label: "percent",
+          startAnimationTime: 1000,
+          refreshAnimationTime: 1000
+
+        });
+    
+        setInterval(function() {
+          $(document).ready(function(){
+              $.getJSON( "/results/" + check_id + "?limit=1", function( dataset ) {
+                  data = dataset.results
+              });
+          });
+
+          // Convert the data
+          data.forEach(function(d) {
+            d.actual = parseFloat(d.actual)
+            d.predicted = parseFloat(d.predicted)
+            d.anomaly = parseFloat((parseFloat(d.likelihood)*100).toFixed(2))
+            d.time = new Date(d.time*1000)
+          });
+
+          g.refresh(data[0].anomaly);
+          
+        }, updateDelay);
+    }
+
+    // Function to generate a table to put the gauges
+    function createGraphTable(width){
+        var columns = 5;
+        var param = /[&?]columns=([^&]+)/.exec(location.search);
+        if (param)
+          columns = parseInt(param[1]);
+        var w = parseInt((width-80)/columns);
+        var h = parseInt(0.8*w);
+        $("table").empty();
+        $(document).ready(function(){
+            $.getJSON( "/checks", function( data ) {
+                jQuery.each(data.checks.reverse(), function(index, value) {
+                    // Add row and column to the table
+                    $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
+                    $("#tr" + parseInt(index/columns)).append(
+                      "<td id=\"td" + index + "\"><div " + "style=\"width:" + w + "px; height:" + h + "px\"" + "id=\"g" + index + "\" class=\"plot\"></div></td>");
+                });
+            });
+        });
+    }
+
+    // Funcition to create the gauges in the table
+    function createPlots(){
+        updateDelay = 2000;
+        //Remove all existing svg elements (they are all inside divs)
+        $("div").empty();
+        $(document).ready(function(){
+            $.getJSON( "/checks", function( data ) {
+                jQuery.each(data.checks.reverse(), function(index, value) {
+                    displayGraph(index, value.id, value.name, updateDelay);
+                });
+            });
+        });
+    }
+
+    // Delay to use when resizing
+    var delay = (function(){
+        var timer = 0;
+        return function(callback, ms){
+            clearTimeout (timer);
+            timer = setTimeout(callback, ms);
+        };
+    })();
+
+    $(window).resize(function() {
+        delay(function(){
+            var win = $(this);
+            createGraphTable($(this).width());
+            createPlots();
+        }, 500);
+    });
+  </script>
+
+  <body>
+    <table id="table"></table>
+
+    <script type="text/javascript">
+                createGraphTable($(this).width());
+                createPlots();
+    </script>
+  </body>
+</html>

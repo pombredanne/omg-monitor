@@ -43,9 +43,9 @@ The JSON string returned contains only the IDs and names of the checks.
 
 The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dinamically plot them. Currently we have three visualizations:
 
-* The [index.html][1] file uses [justGage] to plot the latest anomalies likelihoods. 
-* The [anomaly.html][2] file uses [D3.js] to plot the last hour results with anomalies. 
-* The [likelihood.html][3] file uses [D3.js] to plot the last hour results with anomalies likelihoods. 
+* The [index.html][2] file uses [D3.js] to plot the last hour results with anomalies.
+* The [likelihood.html][3] file uses [D3.js] to plot the last hour results with anomalies likelihoods.
+* The [gauge.html][1] file uses [justGage] to plot the latest anomalies likelihoods as gauge charts. 
 
 See the session [Screenshots](#screenshots) for some examples.
 
@@ -129,7 +129,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [start.py]:https://github.com/allanino/omg-monitor/blob/master/start.py
 [startup.sh]:https://github.com/allanino/omg-monitor/blob/master/startup.sh
 [docker_image]:https://index.docker.io/u/allanino/monitor/
-[1]:https://github.com/allanino/omg-monitor/blob/master/server/public/index.html
-[2]:https://github.com/allanino/omg-monitor/blob/master/server/public/anomaly.html
+[2]:https://github.com/allanino/omg-monitor/blob/master/server/public/index.html
+[1]:https://github.com/allanino/omg-monitor/blob/master/server/public/gauge.html
 [3]:https://github.com/allanino/omg-monitor/blob/master/server/public/likelihood.html
 

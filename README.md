@@ -63,7 +63,7 @@ The parameters that we must specify:
 
 * `[USERNAME] [PASSWORD] [APPKEY]`: Pingdom's credentials: username, password and app-key.
 
-* (Optional) `[CHECK_ID_1] [CHECK_ID_2] ...`: Pingdom's IDs to monitor. If we don't specify any IDs, the monitor will use all available IDs from Pingdom.
+* (Optional) `[CHECK_ID_1] [CHECK_ID_2] ...`: Pingdom's IDs to monitor. If we don't specify any IDs, the monitor will use all available IDs from the given Pingdom account.
 
 ## Q&A
 
@@ -81,7 +81,7 @@ To build the Docker image locally, clone this repository and do:
 
     sudo docker build -t "[USERNAME]/monitor" .
 
-Note that our [Dockerfile] uses the [allanino/nupic] image, as that image already contains a NuPIC installation.
+Note that our [Dockerfile] uses the [numenta/nupic] image, as that image already contains a NuPIC installation.
 
 ## Screenshots
 

@@ -26,6 +26,7 @@ from datetime import datetime
 from collections import deque
 import sys
 import thread
+import logging
 from time import strftime, gmtime, sleep
 
 from nupic.frameworks.opf.modelfactory import ModelFactory
@@ -36,18 +37,25 @@ import redis
 from utils import pingdom # Pingdom API wrapper
 from utils import anomaly_likelihood
 
-_UTC_OFFSET = 10800 # Time zone offset (-3:00 GMT for Sao Paulo/Brazil)
 _TIMEOUT = 60000 # Default response time when status is not 'up' (ms)
 _SECONDS_PER_REQUEST = 60 # Sleep time between requests (in seconds)
 
 # Connect to redis server
 _REDIS_SERVER = redis.Redis("localhost")
 
+# Logging
+logging.basicConfig(level=logging.INFO,
+                    format='[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s',
+                    filename="server/public/log/monitor.log",
+                    maxBytes=1024*1024*2, 
+                    backupCount=10)
+logger = logging.getLogger(__name__)
+
 # Test the redis server
 try:
     response = _REDIS_SERVER.client_list()
 except redis.ConnectionError:
-    print "Redis server is down."
+    logger.error("Redis server is down.")
     sys.exit(0)
 
 def moving_average(data):
@@ -80,9 +88,8 @@ def run(check_id, check_name, username, password, appkey):
     # Deque to keep history of response time input for smoothing
     history = deque([0.0] * MAVG_WINDOW, maxlen=MAVG_WINDOW)
 
-    print "[%s] Getting last 5000 results" % check_name
-    sys.stdout.flush()
-
+    logger.info("[%s] Getting last 5000 results" % check_name)
+    
     # Get past resuts for check
     results = deque()
     i = 0
@@ -90,9 +97,7 @@ def run(check_id, check_name, username, password, appkey):
         try:
             pingdomResult = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
         except Exception, e:
-            print "[%s] Could not get Pingdom results." % check_name
-            print e
-            sleep(_SECONDS_PER_REQUEST)
+            logger.warn("[%s] Could not get Pingdom results." % check_name)
             continue
         for result in pingdomResult['results']:
             results.appendleft(result)
@@ -120,21 +125,17 @@ def run(check_id, check_name, username, password, appkey):
         likelihood = anomalyLikelihood.anomalyProbability(
             modelInput['responsetime'], anomaly_score, modelInput['time'])
        
-        print("[%s] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime  - _UTC_OFFSET)))
-        sys.stdout.flush()
-
+        logger.info("[%s] Processing: %s" % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime))))
+    
         if inference[1]:
             try:
                 # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
                 _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.4f,%.4f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],anomaly_score, likelihood))
             except Exception, e:
-                print "[%s] Could not write results to redis." % check_name
-                print e
-                sys.stdout.flush()
+                logger.warn("[%s] Could not write results to redis." % check_name)
                 continue
 
-    print "[%s] Let's start learning online..." % check_name
-    sys.stdout.flush()
+    logger.info("[%s] Let's start learning online..." % check_name)
 
     # Main loop
     while True:
@@ -142,8 +143,7 @@ def run(check_id, check_name, username, password, appkey):
         try:
             pingdomResults = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 5})['results']
         except Exception, e:
-            print "[%s][online] Could not get Pingdom results." % check_name
-            print e
+            logger.warn("[%s][online] Could not get Pingdom results." % check_name, exc_info=True)
             sleep(_SECONDS_PER_REQUEST)
             continue
         
@@ -173,17 +173,14 @@ def run(check_id, check_name, username, password, appkey):
                 likelihood = anomalyLikelihood.anomalyProbability(
                     modelInput['responsetime'], anomaly_score, modelInput['time'])
                 
-                print("[%s][online] Processing: %s") % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime - _UTC_OFFSET)))
-                sys.stdout.flush()
-                
+                logger.info("[%s][online] Processing: %s" % (check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime))))
+
                 if inference[1]:
                     try:
                         # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
                         _REDIS_SERVER.rpush('results:%d' % check_id, '%s,%s,%d,%d,%.4f,%.4f' % (servertime,modelInput['status'],result.rawInput['responsetime'],result.inferences['multiStepBestPredictions'][1],anomaly_score, likelihood))
                     except Exception, e:
-                        print "[%s] Could not write results to redis." % check_name
-                        print e
-                        sys.stdout.flush()
+                        logger.warn("[%s] Could not write results to redis." % check_name, exc_info=True)
                         continue
         # Wait until next request
         sleep(_SECONDS_PER_REQUEST)

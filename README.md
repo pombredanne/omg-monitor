@@ -54,14 +54,14 @@ See the session [Screenshots](#screenshots) for some examples.
 
 With [Docker] installed, do:
 ```
-sudo docker run allanino/monitor -d -p [PUBLIC_PORT]:5000 [USERNAME] [PASSWORD] [APPKEY] [CHECK_ID_1] [CHECK_ID_2] ...
+sudo docker run -d -p [PUBLIC_PORT]:5000 allanino/monitor [USERNAME] [PASSWORD] [APPKEY] [CHECK_ID_1] [CHECK_ID_2] ...
 ```
 
 The parameters that we must specify:
 
 * `[PUBLIC_PORT]`: Public port number used by the Go server.
 
-* `[USERNAME] [PASSWORD] [APPKEY]`: Pingdom's credentials: username, password and app-key.
+* `[USERNAME] [PASSWORD] [APPKEY]`: Pingdom's credentials: username (may be your email that you login with), password and app-key.
 
 * (Optional) `[CHECK_ID_1] [CHECK_ID_2] ...`: Pingdom's IDs to monitor. If we don't specify any IDs, the monitor will use all available IDs from the given Pingdom account.
 

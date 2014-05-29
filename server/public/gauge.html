@@ -27,7 +27,7 @@
       data.forEach(function(d) {
         d.actual = parseFloat(d.actual)
         d.predicted = parseFloat(d.predicted)
-        d.anomaly = parseFloat(d.likelihood)
+        d.anomaly = parseFloat((parseFloat(d.likelihood)*100).toFixed(3))
         d.time = new Date(d.time*1000)
       });
 
@@ -54,7 +54,7 @@
           data.forEach(function(d) {
             d.actual = parseFloat(d.actual)
             d.predicted = parseFloat(d.predicted)
-            d.anomaly = parseFloat((parseFloat(d.likelihood)*100).toFixed(2))
+            d.anomaly = parseFloat((parseFloat(d.likelihood)*100).toFixed(3))
             d.time = new Date(d.time*1000)
           });
 

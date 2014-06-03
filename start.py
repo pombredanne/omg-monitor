@@ -54,7 +54,8 @@ if __name__ == "__main__":
         for check in checks:
             _REDIS_SERVER.rpush("checks", check['id'])
             _REDIS_SERVER.set("check:%s" % check['id'], check['name'])
-
+                    
+        jobs_list = []                    
         # Start the monitors sessions
         for check in checks:
             check_id = int(check['id'])
@@ -62,8 +63,8 @@ if __name__ == "__main__":
             
             logger.info("[%s] Starting..." % check_name)
             
-            job = multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey))
-            job.start()
+            jobs_list.append(multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey)))
+            jobs_list[len(jobs_list) - 1].start()
     else:
         username = sys.argv[1]
         password = sys.argv[2]

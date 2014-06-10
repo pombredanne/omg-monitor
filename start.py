@@ -3,6 +3,7 @@
 import sys
 import multiprocessing
 import logging
+import logging.handlers
 import json
 from monitor import monitor
 from utils import pingdom # Pingdom API wrapper
@@ -12,12 +13,19 @@ import redis
 _REDIS_SERVER = redis.Redis("localhost")
 
 # Use logging
-logging.basicConfig(level=logging.INFO,
-                    format='[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s',
-                    filename="server/public/log/monitor.log",
-                    maxBytes=1024*1024*2, 
-                    backupCount=10)
 logger = logging.getLogger(__name__)
+handler = logging.handlers.RotatingFileHandler("server/public/log/monitor.log",
+                                                maxBytes=1024*1024*4,
+                                                backupCount=10,
+                                                )
+
+formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')
+handler.setFormatter(formatter)
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+# Multiprocessing logger
 multiprocessing.log_to_stderr(logging.DEBUG)
 
 # Test the redis server

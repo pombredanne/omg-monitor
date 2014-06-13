@@ -69,7 +69,7 @@ def run(check_id, check_name, username, password, appkey):
     logger = logging.getLogger(__name__)
     handler = logging.handlers.RotatingFileHandler("server/public/log/monitor_%d.log" % check_id,
                                                     maxBytes=1024*1024*4,
-                                                    backupCount=10,
+                                                    backupCount=1,
                                                     )
 
     formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')

@@ -14,7 +14,7 @@ _REDIS_SERVER = redis.Redis("localhost")
 
 # Use logging
 logger = logging.getLogger(__name__)
-handler = logging.handlers.RotatingFileHandler("server/public/log/monitor.log",
+handler = logging.handlers.RotatingFileHandler("server/public/log/start.log",
                                                 maxBytes=1024*1024*4,
                                                 backupCount=10,
                                                 )

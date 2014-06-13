@@ -44,18 +44,8 @@ _SECONDS_PER_REQUEST = 60 # Sleep time between requests (in seconds)
 # Connect to redis server
 _REDIS_SERVER = redis.Redis("localhost")
 
-# Use logging
+# Top logger (for redis). Will use only when stand-alone.
 logger = logging.getLogger(__name__)
-handler = logging.handlers.RotatingFileHandler("server/public/log/monitor.log",
-                                                maxBytes=1024*1024*4,
-                                                backupCount=10,
-                                                )
-
-formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')
-handler.setFormatter(formatter)
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 # Test the redis server
 try:
@@ -74,6 +64,19 @@ def create_model():
 
 def run(check_id, check_name, username, password, appkey):
     """ Main loop, responsible for initial and online training """
+
+    # Setup logging
+    logger = logging.getLogger(__name__)
+    handler = logging.handlers.RotatingFileHandler("server/public/log/monitor_%d.log" % check_id,
+                                                    maxBytes=1024*1024*4,
+                                                    backupCount=10,
+                                                    )
+
+    formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
     # Pingdom instance
     ping = pingdom.Pingdom(username=username, password=password, appkey=appkey)

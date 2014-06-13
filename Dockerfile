@@ -1,6 +1,6 @@
 FROM numenta/nupic
 
-MAINTAINER Allan Costa <allan@yahoo.com.br>
+MAINTAINER Allan Costa <allaninocencio@yahoo.com.br>
 
 # Install redis, redis-py and go
 RUN \

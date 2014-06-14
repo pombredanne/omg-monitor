@@ -16,7 +16,7 @@ _REDIS_SERVER = redis.Redis("localhost")
 logger = logging.getLogger(__name__)
 handler = logging.handlers.RotatingFileHandler("server/public/log/start.log",
                                                 maxBytes=1024*1024*4,
-                                                backupCount=10,
+                                                backupCount=1,
                                                 )
 
 formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')

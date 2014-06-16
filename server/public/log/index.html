@@ -4,7 +4,8 @@
      <title>Log</title>
      <style type="text/css">
         div {
-          width: 200px;
+          width: 300px;
+          margin-right: 20px;
           float: left;
         }
 
@@ -43,8 +44,8 @@
         }
          
         li a:hover {
-          font-size: 30px;
-          background: #f6f6f6;
+          font-size: 22px;
+          background: #f9f9f9;
         }
      </style>
      <script src="../js/jquery-1.11.1.min.js"></script>
@@ -57,7 +58,7 @@
             $(document).ready(function(){
                 $.getJSON( "/checks", function( data ) {
                     jQuery.each(data.checks.reverse(), function(index, value) {
-                        $("#process").append("<li><a href=\"/log/monitor_" + value.id + ".log\">Monitor " + value.name +" </a></li>")
+                        $("#process").append("<li><a href=\"/log/monitor_" + value.id + ".log\">" + value.name +" </a></li>")
                     });
                 });
             });
@@ -75,6 +76,6 @@
     </div>
     <div>
                     <h2>Model logs</h2>
-                    <ul id="process"></ul>
+                    <ul id="process"><li></li></ul>
     </div>
  </body>

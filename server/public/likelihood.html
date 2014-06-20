@@ -429,12 +429,14 @@
             var columns = 3;
             var h = 200; // height
             var w = width;
+            var updateDelay = 10000;
+            var transitionDelay = 1500;
             // Remove all existing svg elements (they are all inside divs)
             $("div").empty();
             $(document).ready(function(){
                 $.getJSON( "/checks", function( data ) {
                     jQuery.each(data.checks.reverse(), function(index, value) {
-                        displayGraph(index, value.id, value.name, true, w/columns, h, 5000, 1500);
+                        displayGraph(index, value.id, value.name, true, w/columns, h, updateDelay, transitionDelay);
                     });
                 });
             });

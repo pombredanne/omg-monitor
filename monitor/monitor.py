@@ -25,6 +25,7 @@
 from datetime import datetime
 from collections import deque
 import sys
+import os
 import thread
 import logging
 import logging.handlers
@@ -67,9 +68,9 @@ def run(check_id, check_name, username, password, appkey):
 
     # Setup logging
     logger = logging.getLogger(__name__)
-    handler = logging.handlers.RotatingFileHandler("server/public/log/monitor_%d.log" % check_id,
-                                                    maxBytes=1024*1024*4,
-                                                    backupCount=1,
+    handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/monitor_%s.log" % check_name,
+                                                    maxBytes=1024*1024,
+                                                    backupCount=4,
                                                     )
 
     formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')

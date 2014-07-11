@@ -42,6 +42,9 @@ RUN \
 
 EXPOSE 5000
 
+# Set directory for logs
+ENV LOG_DIR /var/log/docker/monitor
+
 WORKDIR /home/docker/omg-monitor/
 
 ENTRYPOINT ["./startup.sh"]

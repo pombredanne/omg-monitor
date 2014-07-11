@@ -8,15 +8,16 @@ import json
 from monitor import monitor
 from utils import pingdom # Pingdom API wrapper
 import redis
+import os
 
 # Connect to redis server
 _REDIS_SERVER = redis.Redis("localhost")
 
 # Use logging
 logger = logging.getLogger(__name__)
-handler = logging.handlers.RotatingFileHandler("server/public/log/start.log",
-                                                maxBytes=1024*1024*4,
-                                                backupCount=1,
+handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/start.log",
+                                                maxBytes=1024*1024,
+                                                backupCount=4,
                                                 )
 
 formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')

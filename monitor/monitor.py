@@ -39,7 +39,7 @@ import redis
 from utils import pingdom # Pingdom API wrapper
 from utils import anomaly_likelihood
 
-_TIMEOUT = 60000 # Default response time when status is not 'up' (ms)
+_TIMEOUT = 30000 # Default response time when status is not 'up' (ms)
 _SECONDS_PER_REQUEST = 60 # Sleep time between requests (in seconds)
 
 # Connect to redis server
@@ -57,7 +57,7 @@ except redis.ConnectionError:
 
 def moving_average(data):
     """ Used to eventually smooth input data. Not used now. """
-    return sum(data)/len(data) if len(data) > 0 else 0.0 
+    return sum(data)/len(data) if len(data) > 0 else 0 
 
 def create_model():
     """ Create the CLA model """
@@ -84,7 +84,6 @@ def run(check_id, check_name, username, password, appkey):
 
     # The shifter is used to bring the predictions to the actual time frame
     shifter = InferenceShifter()
-
     
     # The anomaly likelihood object
     anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
@@ -94,7 +93,8 @@ def run(check_id, check_name, username, password, appkey):
     model.enableInference({'predictedField': 'responsetime'})
 
     # Moving average window for response time smoothing (higher means smoother)
-    MAVG_WINDOW = 1 
+    MAVG_WINDOW = 30
+
     # Deque to keep history of response time input for smoothing
     history = deque([0.0] * MAVG_WINDOW, maxlen=MAVG_WINDOW)
 
@@ -119,7 +119,9 @@ def run(check_id, check_name, username, password, appkey):
         if 'responsetime' not in modelInput:
             modelInput['responsetime'] = _TIMEOUT
 
-        modelInput['responsetime'] = int(modelInput['responsetime'])
+        history.appendleft(int(modelInput['responsetime']))
+        modelInput['responsetime'] = moving_average(history)
+
         servertime  = int(modelInput['time'])
         modelInput['time'] = datetime.utcfromtimestamp(servertime)
 
@@ -170,7 +172,8 @@ def run(check_id, check_name, username, password, appkey):
                     if 'responsetime' not in modelInput:
                         modelInput['responsetime'] = _TIMEOUT
 
-                    modelInput['responsetime'] = int(modelInput['responsetime'])
+                    history.appendleft(int(modelInput['responsetime']))
+                    modelInput['responsetime'] = moving_average(history)
 
                     # Pass the input to the model
                     result = model.run(modelInput)

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker build -t omg . 
+docker run --volumes-from omg_logs -p 5000:5000 -it omg "$OMG_USER" $OMG_PASS  $OMG_KEY

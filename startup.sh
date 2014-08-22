@@ -11,4 +11,4 @@ redis-server > $LOG_DIR/redis.log &
 
 # Start Go server
 cd server
-./server > $LOG_DIR/martini.log
+exec ./server > $LOG_DIR/martini.log

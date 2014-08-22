@@ -11,4 +11,9 @@ redis-server > $LOG_DIR/redis.log &
 
 # Start Go server
 cd server
-exec ./server > $LOG_DIR/martini.log
+if [ -z "$TAIL" ]; then
+	exec ./server > $LOG_DIR/martini.log
+else	
+	./server > $LOG_DIR/martini.log &
+	tail -F $LOG_DIR/processes.log $LOG_DIR/martini.log 
+fi

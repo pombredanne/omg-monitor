@@ -4,7 +4,6 @@ import sys
 import multiprocessing
 import logging
 import logging.handlers
-import json
 from monitor import monitor
 from utils import pingdom # Pingdom API wrapper
 import redis
@@ -16,9 +15,9 @@ _REDIS_SERVER = redis.Redis("localhost")
 # Use logging
 logger = logging.getLogger(__name__)
 handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/start.log",
-                                                maxBytes=1024*1024,
-                                                backupCount=4,
-                                                )
+                                               maxBytes=1024*1024,
+                                               backupCount=4,
+                                              )
 
 formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')
 handler.setFormatter(formatter)
@@ -96,8 +95,8 @@ if __name__ == "__main__":
          
         jobs_list = []
         # Start the monitors sessions
-        for id in sys.argv[4:]:
-            check_id = int(id)
+        for _id in sys.argv[4:]:
+            check_id = int(_id)
             check_name = None
 
             # Check if ID exist
@@ -105,18 +104,18 @@ if __name__ == "__main__":
                 if check_id == check['id']:
                     check_name = check['name']
         
-            if check_name == None:
-                logger.warn("Check ID %s doesn't exist. Skipping this one." % check_id)
+            if check_name is None:
+                logger.warn("Check ID %s doesn't exist. Skipping this one.", check_id)
                 continue
             else: # Write check to Redis only if it exists and if is monitoring
                 _REDIS_SERVER.rpush("checks", check_id)
                 _REDIS_SERVER.set("check:%s" % check_id, check_name)
             
-            logger.info("[%s] Starting..." % check_name)
+            logger.info("[%s] Starting...", check_name)
             
             jobs_list.append(multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey)))
             jobs_list[len(jobs_list) - 1].start()
 
     for job in jobs_list:
-        logger.info("Joining %s." % job.name)
+        logger.info("Joining %s.", job.name)
         job.join()

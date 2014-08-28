@@ -26,7 +26,6 @@ from datetime import datetime
 from collections import deque
 import sys
 import csv
-import thread
 from time import strftime, gmtime, sleep
 
 from utils import pingdom # Pingdom API wrapper
@@ -57,8 +56,6 @@ def create_dataset(check_id, username, password, appkey):
         for result in pingdomResult['results']:
             results.appendleft(result)
         i = i + 1
-
-    dataset = 'time,status,responsetime\n'
 
     servertime = None
     with open('swarm/dataset.csv', 'wb') as csvfile:

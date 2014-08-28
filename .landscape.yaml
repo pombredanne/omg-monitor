@@ -1,5 +1,4 @@
 ignore-paths:
     - utils
-ignore-patterns:
-    - ^swarm/description\.py$
-    - ^swarm/permutations\.py$
+    - swarm/description.py
+    - swarm/permutations.py

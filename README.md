@@ -2,6 +2,8 @@
 
 [![Code Health](https://landscape.io/github/cloudwalkio/omg-monitor/master/landscape.png)](https://landscape.io/github/cloudwalkio/omg-monitor/master)
 
+[![Docker build](http://dockeri.co/image/cloudwalk/monitor)](http://dockeri.co/image/cloudwalk/monitor)
+
 This program uses [NuPIC] to catch anomalies in [Pingdom] monitored response times. It runs as a [Docker] container, so to use it you just have to run the container (see [Usage](#usage)).
 
 Here is a simplified flowchart of the project:

@@ -69,7 +69,7 @@ if __name__ == "__main__":
             check_id = int(check['id'])
             check_name = check['name']
             
-            logger.info("[%s] Starting..." % check_name)
+            logger.info("[%s] Starting...", check_name)
             
             jobs_list.append(multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey)))
             jobs_list[len(jobs_list) - 1].start()

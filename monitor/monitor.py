@@ -26,7 +26,6 @@ from datetime import datetime
 from collections import deque
 import os
 import sys
-import thread
 import logging
 import logging.handlers
 from time import strftime, gmtime, sleep
@@ -149,7 +148,7 @@ def run(check_id, check_name, username, password, appkey):
                                                                result.inferences['multiStepBestPredictions'][1],
                                                                anomaly_score, 
                                                                likelihood)
-                                                              )
+                                   )
             except Exception:
                 logger.warn("[%s] Could not write results to redis.", check_name)
                 continue
@@ -206,7 +205,7 @@ def run(check_id, check_name, username, password, appkey):
                                                                            result.inferences['multiStepBestPredictions'][1],
                                                                            anomaly_score, 
                                                                            likelihood)
-                                                                          )
+                                               )
                         except Exception:
                             logger.warn("[%s] Could not write results to redis.", check_name, exc_info=True)
                             continue

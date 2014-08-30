@@ -4,7 +4,7 @@ import sys
 import multiprocessing
 import logging
 import logging.handlers
-from monitor import monitor
+from monitor import run_check
 from utils import pingdom # Pingdom API wrapper
 import redis
 import os
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         password = sys.argv[2]
         appkey = sys.argv[3]
 
-        # Pingdom instance
+        # Pingdom instance (we need a way to get all checks in case we want to run everything)
         ping = pingdom.Pingdom(username=username, password=password, appkey=appkey)
 
         # Get accounts checks
@@ -67,11 +67,17 @@ if __name__ == "__main__":
         # Start the monitors sessions
         for check in checks:
             check_id = int(check['id'])
-            check_name = check['name']
             
             logger.info("[%s] Starting...", check_name)
             
-            jobs_list.append(multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey)))
+            # Configuration to pass to stream class
+            stream_config = {'username': username, 'password': password, 'appkey': appkey, 'check_id': check_id}
+            
+            # RandomScalarEncoder resolution
+            resolution = 25
+
+            # Start job
+            jobs_list.append(multiprocessing.Process(target=run_check.run, args=(stream_config, resolution)))
             jobs_list[len(jobs_list) - 1].start()
     else:
         username = sys.argv[1]
@@ -97,7 +103,6 @@ if __name__ == "__main__":
         # Start the monitors sessions
         for _id in sys.argv[4:]:
             check_id = int(_id)
-            check_name = None
 
             # Check if ID exist
             for check in checks:
@@ -113,7 +118,14 @@ if __name__ == "__main__":
             
             logger.info("[%s] Starting...", check_name)
             
-            jobs_list.append(multiprocessing.Process(target=monitor.run, args=(check_id, check_name, username, password, appkey)))
+            # Configuration to pass to stream class
+            stream_config = {'username': username, 'password': password, 'appkey': appkey, 'check_id': check_id}
+            
+            # RandomScalarEncoder resolution
+            resolution = 25
+
+            # Start job
+            jobs_list.append(multiprocessing.Process(target=run_check.run, args=(stream_config, resolution)))
             jobs_list[len(jobs_list) - 1].start()
 
     for job in jobs_list:

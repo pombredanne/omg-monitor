@@ -1,34 +1,38 @@
 from utils import pingdom # Pingdom API wrapper
-from collections import deque
-import logging
 from datetime import datetime
+from collections import deque
+from base import BaseStream
+import logging
 import os
 
 logger = logging.getLogger(__name__)
 
-class Stream():
+class PingdomStream(BaseStream):
     """ Class to provide a stream of data to NuPIC. """
+    
+    @property
+    def value_label(self):
+        return "Response time"
+    
+    @property
+    def value_unit(self):
+        return "ms"
 
     def __init__(self, config):
+        
+        super(PingdomStream, self).__init__(config)
+
         # Set Pingdom object
-        self.ping = pingdom.Pingdom(username=config['username'], password=config['password'], appkey=config['appkey'])
-        self.check_id = config['check_id']
+        self.ping = pingdom.Pingdom(username=config['credentials']['username'], 
+                                    password=config['credentials']['password'], 
+                                    appkey=config['credentials']['appkey'])
 
-        # Default value to associate with timeouts
+        # Default value to associate with timeouts (to have something to feed NuPIC)
         self.timeout_default = 30000
-
-        # Time to keep watch for new values
-        self.servertime = None
-
-        # Moving average window for response time smoothing (higher means smoother)
-        MAVG_WINDOW = 30
-
-        # Deque to keep history of response time input for smoothing
-        self.history = deque([0.0] * MAVG_WINDOW, maxlen=MAVG_WINDOW)
 
         # Setup logging
         self.logger =  logger or logging.getLogger(__name__)
-        handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/stream_%d.log" % self.check_id,
+        handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/stream_%s.log" % self.name,
                                                        maxBytes=1024*1024,
                                                        backupCount=4,
                                                       )
@@ -38,17 +42,18 @@ class Stream():
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
 
+
     def historic_data(self):
         """ Return a batch of data to be used at training """
 
-        # Get past resuts for check
+        # Get past resuts for stream
         results = deque()
         i = 0
         while i < 1:
             try:
-                pingdomResult = self.ping.method('results/%d/' % self.check_id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
+                pingdomResult = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
             except Exception:
-                self.logger.warn("[%d] Could not get Pingdom results.", self.check_id)
+                self.logger.warn("Could not get Pingdom results.")
                 i = i + 1
                 continue
             for result in pingdomResult['results']:
@@ -76,9 +81,9 @@ class Stream():
 
         new_data = []
         try:
-            pingdomResults = self.ping.method('results/%d/' % self.check_id, method='GET', parameters={'limit': 5})['results']
+            pingdomResults = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 5})['results']
         except Exception, e:
-            self.logger.warn("[%d][online] Could not get Pingdom results.", self.check_id, exc_info=True)
+            self.logger.warn("[online] Could not get Pingdom results.", exc_info=True)
             return new_data
 
         # If any result contains new responses (ahead of [servetime]) process it. 
@@ -99,7 +104,17 @@ class Stream():
                 new_data.append(modelInput)
         return new_data
 
-    def _moving_average(self):
-        """ Used to smooth input data. """
-
-        return sum(self.history)/len(self.history) if len(self.history) > 0 else 0 
+    @classmethod
+    def available_streams(cls, credentials):
+        """ Return a list with available streams for the class implementing this. Should return a list : 
+                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
+        """
+        # Set Pingdom object
+        ping = pingdom.Pingdom(username=credentials['username'], 
+                                    password=credentials['password'], 
+                                    appkey=credentials['appkey'])
+        checks = ping.method('checks')
+        result = []
+        for check in checks['checks']:
+            result.append({'id': check['id'], 'name': check['name']})
+        return result

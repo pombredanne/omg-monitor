@@ -11,7 +11,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
-class Check():
+class Monitor(object):
     """ A NuPIC model that saves results to Redis. """
 
     def __init__(self, resolution, stream):
@@ -33,16 +33,13 @@ class Check():
         # Set stream source
         self.stream = stream
 
-        # Get check id
-        self.check_id = self.stream.check_id
-
         # Setup class variables
         self.seconds_per_request = 60
         self.db = redis.Redis("localhost")
 
         # Setup logging
         self.logger =  logger or logging.getLogger(__name__)
-        handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/check_%d.log" % self.check_id,
+        handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/monitor_%s.log" % self.stream.name,
                                                        maxBytes=1024*1024,
                                                        backupCount=4,
                                                       )
@@ -51,6 +48,15 @@ class Check():
         handler.setLevel(logging.INFO)
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
+
+        # Write metadata to Redis
+        try:
+            # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
+            self.db.set('name:%d' % self.stream.id, self.stream.name)
+            self.db.set('value_label:%d' % self.stream.id, self.stream.value_label)
+            self.db.set('value_unit:%d' % self.stream.id, self.stream.value_unit)
+        except Exception:
+            self.logger.warn("Could not write results to redis.")
 
     def train(self):
         data = self.stream.historic_data()
@@ -85,12 +91,12 @@ class Check():
         # Get timestamp from datetime
         timestamp = calendar.timegm(modelInput['time'].timetuple())
 
-        self.logger.info("[%d] Processing: %s", self.check_id, strftime("%Y-%m-%d %H:%M:%S", modelInput['time'].timetuple()))
+        self.logger.info("Processing: %s", strftime("%Y-%m-%d %H:%M:%S", modelInput['time'].timetuple()))
                 
         if inference[1]:
             try:
-                # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                self.db.rpush('results:%d' % self.check_id, 
+                # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
+                self.db.rpush('results:%d' % self.stream.id, 
                               '%s,%d,%d,%.5f,%.5f' % (timestamp,
                                                          result.rawInput['value'],
                                                          result.inferences['multiStepBestPredictions'][1],
@@ -98,4 +104,4 @@ class Check():
                                                          likelihood)
                              )
             except Exception:
-                self.logger.warn("[%d] Could not write results to redis.", self.check_id)
+                self.logger.warn("Could not write results to redis.")

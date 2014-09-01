@@ -1,6 +1,5 @@
 import librato
 from datetime import datetime
-from collections import deque
 from base import BaseStream
 import logging
 import os
@@ -25,7 +24,7 @@ class LibratocpuStream(BaseStream):
 
         # Set Pingdom object
         self.libr = librato.connect(config['credentials']['username'], 
-                                       config['credentials']['token'])
+                                    config['credentials']['token'])
 
         # Default value to associate with timeouts (to have something to feed NuPIC)
         self.timeout_default = 30000

@@ -29,8 +29,8 @@ type Results struct {
 
 type ResultType struct {
     Time int64 `json:"time"`
-    Actual int64 `json:"actual"`
-    Predicted int64 `json:"predicted"`
+    Actual float64 `json:"actual"`
+    Predicted float64 `json:"predicted"`
     Anomaly float64 `json:"anomaly"`
     Likelihood float64 `json:"likelihood"`
 }
@@ -118,8 +118,8 @@ func getJsonResults(redisResponse []interface{}) []byte {
 
         // Set the fields that will compose the ResultType object
         time, _ := strconv.ParseInt(fields[0], 10, 64)
-        actual, _ := strconv.ParseInt(fields[1], 10, 64)
-        predicted, _ := strconv.ParseInt(fields[2], 10, 64)
+        actual, _ := strconv.ParseFloat(fields[1], 64)
+        predicted, _ := strconv.ParseFloat(fields[2], 64)
         anomaly, _ := strconv.ParseFloat(fields[3], 64)
         likelihood, _ := strconv.ParseFloat(fields[4], 64)
 

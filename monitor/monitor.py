@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Monitor(object):
     """ A NuPIC model that saves results to Redis. """
 
-    def __init__(self, resolution, stream):
+    def __init__(self, resolution, seconds_per_request, stream):
 
         # Instantiate NuPIC model
         model_params = base_model_params.MODEL_PARAMS
@@ -71,6 +71,8 @@ class Monitor(object):
             for modelInput in data:
                 self._update(modelInput)
 
+            sleep(self.seconds_per_request)
+
     def _update(self, modelInput):
         # Pass the input to the model
         result = self.model.run(modelInput)
@@ -98,7 +100,7 @@ class Monitor(object):
             try:
                 # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
                 self.db.rpush('results:%s' % self.stream.id, 
-                              '%s,%d,%d,%.5f,%.5f' % (timestamp,
+                              '%s,%.5f,%.5f,%.5f,%.5f' % (timestamp,
                                                       result.rawInput['value'],
                                                       result.inferences['multiStepBestPredictions'][1],
                                                       anomaly_score, 

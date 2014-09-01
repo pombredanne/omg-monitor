@@ -57,7 +57,7 @@ class PingdomStream(BaseStream):
                 i = i + 1
                 continue
             for result in pingdomResult['results']:
-                    results.appendleft(result)
+                results.appendleft(result)
             i = i + 1
 
         historic_data = []
@@ -111,8 +111,8 @@ class PingdomStream(BaseStream):
         """
         # Set Pingdom object
         ping = pingdom.Pingdom(username=credentials['username'], 
-                                    password=credentials['password'], 
-                                    appkey=credentials['appkey'])
+                               password=credentials['password'], 
+                               appkey=credentials['appkey'])
         checks = ping.method('checks')
         result = []
         for check in checks['checks']:

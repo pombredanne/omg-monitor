@@ -53,7 +53,7 @@ class PingdomStream(BaseStream):
             try:
                 pingdomResult = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
             except Exception:
-                self.logger.warn("Could not get Pingdom results.")
+                self.logger.warn("Could not get Pingdom results.", exc_info=True)
                 i = i + 1
                 continue
             for result in pingdomResult['results']:
@@ -81,27 +81,27 @@ class PingdomStream(BaseStream):
 
         new_data = []
         try:
-            pingdomResults = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 5})['results']
-        except Exception, e:
-            self.logger.warn("[online] Could not get Pingdom results.", exc_info=True)
+            pingdom_results = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 5})['results']
+        except Exception:
+            self.logger.warn("Could not get Pingdom results.", exc_info=True)
             return new_data
 
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
-        for modelInput in [pingdomResults[4], pingdomResults[3], pingdomResults[2], pingdomResults[1], pingdomResults[0]]:
-            if self.servertime < int(modelInput['time']):
+        for model_input in [pingdom_results[4], pingdom_results[3], pingdom_results[2], pingdom_results[1], pingdom_results[0]]:
+            if self.servertime < int(model_input['time']):
                 # Update servertime
-                self.servertime  = int(modelInput['time'])
-                modelInput['time'] = datetime.utcfromtimestamp(self.servertime)
+                self.servertime  = int(model_input['time'])
+                model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
                 # If don't have response time is because it's not up, so set it to a large number
-                if 'responsetime' not in modelInput:
-                    modelInput['responsetime'] = self.timeout_default
+                if 'responsetime' not in model_input:
+                    model_input['responsetime'] = self.timeout_default
 
-                self.history.appendleft(int(modelInput['responsetime']))
-                modelInput['value'] = self._moving_average()
+                self.history.appendleft(int(model_input['responsetime']))
+                model_input['value'] = self._moving_average()
 
-                new_data.append(modelInput)
+                new_data.append(model_input)
         return new_data
 
     @classmethod

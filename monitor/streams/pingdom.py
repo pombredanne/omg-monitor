@@ -66,7 +66,7 @@ class PingdomStream(BaseStream):
             if 'responsetime' not in modelInput:
                 modelInput['responsetime'] = self.timeout_default
 
-            self.history.appendleft(int(modelInput['responsetime']))
+            self.history.appendleft(float(modelInput['responsetime']))
             modelInput['value'] = self._moving_average()
 
             self.servertime  = int(modelInput['time'])
@@ -98,7 +98,7 @@ class PingdomStream(BaseStream):
                 if 'responsetime' not in model_input:
                     model_input['responsetime'] = self.timeout_default
 
-                self.history.appendleft(int(model_input['responsetime']))
+                self.history.appendleft(float(model_input['responsetime']))
                 model_input['value'] = self._moving_average()
 
                 new_data.append(model_input)

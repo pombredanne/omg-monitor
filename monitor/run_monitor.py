@@ -7,7 +7,7 @@ from monitor import Monitor
 from streams.pingdom import PingdomStream
 import logging
 import logging.handlers
-import ConfigParser
+import yaml
 import importlib
 
 # Use logging
@@ -43,75 +43,79 @@ def run(StreamClass, stream_config, resolution):
 
 if __name__ == "__main__":
     if(len(sys.argv) < 2):
-        logger.info("Usage: run_monitor.py [config.cfg]")
+        logger.info("Usage: run_monitor.py [config1.yaml config2.yaml ...]")
         sys.exit(0)
     
-    config = ConfigParser.ConfigParser()
-    config.read(sys.argv[1])
-    
-    stream_type= config.get('general', 'stream')
-
-    stream_module = importlib.import_module("streams.%s" % stream_type)
-    StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
-
-    # Set credentials dict
-    credentials = {}
-    for name, value in config.items('credentials'):
-        credentials[name] = value
-
-    try:
-        streams = StreamClass.available_streams(credentials)
-    except Exception, e:
-        logger.error('Could not connect to stream.', exc_info=True)
-        sys.exit(0)
-
-    # Get parameters
-    resolution = int(config.get('parameters', 'encoder_resolution'))
-    moving_average_window = int(config.get('parameters', 'moving_average_window'))
-
-    # If don't have specfied monitors, run everything!
-    if not config.has_section('monitors'):
-        # Start the monitors sessions
-        jobs_list = []                    
-        for stream in streams:
-            stream_id = stream['id']
-            stream_name = stream['name']
-            
-            logger.info("Starting stream: %s", stream_name)
-            
-            # Configuration to pass to stream class
-            stream_config = {'id': stream_id, 
-                             'name': stream_name,
-                             'moving_average_window': moving_average_window,
-                             'credentials': credentials}
-            
-            # Start job
-            jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
-            jobs_list[len(jobs_list) - 1].start()
-    else: # Run streams passed
-        # Start the monitors sessions
-        jobs_list = []
-        for _, stream_id in config.items('monitors'):
-            stream_id = stream_id
-            stream_name = None    
-
-            # Check if ID exist
-            for stream in streams:
-                if stream_id == stream['id']:
-                    stream_name = stream['name']
+    jobs_list = []
+    for config_file in sys.argv[1:]:
+        config = yaml.load(file(config_file, 'r'))
         
-            if stream_name is None:
-                logger.warn("Stream ID %s doesn't exist. Skipping this one.", stream_id)
-                continue
-            
+        stream_type= config['stream']
 
-            logger.info("Starting stream: %s", stream_name)
+        stream_module = importlib.import_module("streams.%s" % stream_type)
+        StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
+
+        # Set credentials dict
+        credentials = {}
+        for name, value in config['credentials'].items():
+            credentials[name] = value
+
+        try:
+            streams = StreamClass.available_streams(credentials)
+        except Exception, e:
+            logger.error('Could not connect to stream.', exc_info=True)
+            sys.exit(0)
+
+        # Get parameters
+        resolution = int(config['parameters']['encoder_resolution'])
+        moving_average_window = int(config['parameters']['moving_average_window'])
+
+        # If don't have specfied monitors, run everything!
+        monitors_ids = config.get('monitors', None)
+        if monitors_ids is None: 
+            # Start the monitors sessions                 
+            for stream in streams:
+                stream_id = stream['id']
+                stream_name = stream['name']
+                
+                logger.info("Starting stream: %s", stream_name)
+                
+                # Configuration to pass to stream class
+                stream_config = {'id': stream_id, 
+                                 'name': stream_name,
+                                 'moving_average_window': moving_average_window,
+                                 'credentials': credentials}
+                
+                # Start job
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
+                jobs_list[len(jobs_list) - 1].start()
+        else: # Run streams passed
+            # Start the monitors sessions
+            for stream_id in monitors_ids:
+                stream_id = str(stream_id)
+                stream_name = None    
+
+                # Check if ID exist
+                for stream in streams:
+                    if stream_id == stream['id']:
+                        stream_name = stream['name']
             
-            # Configuration to pass to stream class
-            stream_config = {'id': stream_id, 
-                             'name': stream_name,
-                             'moving_average_window': moving_average_window,
-                             'credentials': credentials}
-            # Start job
-            jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
-            jobs_list[len(jobs_list) - 1].start()
+                if stream_name is None:
+                    logger.warn("Stream ID %s doesn't exist. Skipping this one.", stream_id)
+                    continue
+                
+
+                logger.info("Starting stream: %s", stream_name)
+                
+                # Configuration to pass to stream class
+                stream_config = {'id': stream_id, 
+                                 'name': stream_name,
+                                 'moving_average_window': moving_average_window,
+                                 'credentials': credentials}
+                # Start job
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
+                jobs_list[len(jobs_list) - 1].start()
+
+    for job in jobs_list:
+        logger.info("Joining %s.", job.name)
+        job.join()

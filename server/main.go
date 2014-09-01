@@ -17,8 +17,10 @@ type Checks struct {
 }
 
 type CheckType struct {
-    ID int64 `json:"id"`
+    ID string `json:"id"`
     Name string `json:"name"`
+    ValueLabel string `json:"value_label"`
+    ValueUnit string `json:"value_unit"`
 }
 
 type Results struct {
@@ -60,20 +62,43 @@ func getJsonChecks(redisResponse []interface{}) []byte {
     for k, _ := range redisResponse {
         v := ""
         redisResponse, _ = redis.Scan(redisResponse, &v)
-        id, _ := strconv.ParseInt(v, 10, 64)
+
+        id := v[5:len(v)]
 
         // Get the name corresponding to the id
-        n, err := redis.String(conn.Do("GET", "check:" + v))
+        name, errn := redis.String(conn.Do("GET", "name:" + id))
         for {
-            if err == nil { 
+            if errn == nil { 
                 break; 
                 } else {
-                    log.Printf("Redis error in GET check: %s\n", err)
-                    n, err = redis.String(conn.Do("GET", "check:" + v))
+                    log.Printf("Redis error in GET name: %s\n", errn)
+                    name, errn = redis.String(conn.Do("GET", "name:" + id))
                 }
         }
   
-        checks[k] = CheckType{id, n}
+        // Get the value_label corresponding to the id
+        valueLabel, errvl := redis.String(conn.Do("GET", "value_label:" + id))
+        for {
+            if errvl == nil { 
+                break; 
+                } else {
+                    log.Printf("Redis error in GET value_label: %s\n", errvl)
+                    valueLabel, errvl = redis.String(conn.Do("GET", "value_label:" + id))
+                }
+        }
+
+        // Get the value_unit corresponding to the id
+        valueUnit, errvu := redis.String(conn.Do("GET", "value_unit:" + id))
+        for {
+            if errvu == nil { 
+                break; 
+                } else {
+                    log.Printf("Redis error in GET value_unit: %s\n", errvu)
+                    valueUnit, errvu = redis.String(conn.Do("GET", "value_unit:" + id))
+                }
+        }
+
+        checks[k] = CheckType{id, name, valueLabel, valueUnit}
     }
     conn.Close()
     b,_ := json.MarshalIndent(Checks{checks}, "", "  ")
@@ -135,13 +160,13 @@ func main() {
         conn := redisPool.Get()
 
         // Query redis all the available "checks"
-        reply, err := redis.Values(conn.Do("LRANGE", "checks", 0, -1))
+        reply, err := redis.Values(conn.Do("KEYS", "name:*"))
         for {
             if err == nil { 
                 break; 
                 } else {
-                    log.Printf("Redis error in LRANGE checks: %s\n", err)
-                    reply, err = redis.Values(conn.Do("LRANGE", "checks", 0, -1))
+                    log.Printf("Redis error in KEYS name: %s\n", err)
+                    reply, err = redis.Values(conn.Do("KEYS", "name:*"))
                 }
         }
         conn.Close()

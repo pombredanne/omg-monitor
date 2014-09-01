@@ -31,7 +31,7 @@ class BaseStream(object):
         self.name = config['name']
 
         # Time to keep watch for new values
-        self.servertime = None
+        self.servertime = 0
         
         # Deque to keep history of input values for smoothing
         moving_average_window = config['moving_average_window'] 
@@ -63,4 +63,4 @@ class BaseStream(object):
     def _moving_average(self):
         """ Used to smooth input data. """
 
-        return sum(self.history)/len(self.history) if len(self.history) > 0 else 0 
+        return sum(self.history)/len(self.history) if len(self.history) > 0 else 0.0

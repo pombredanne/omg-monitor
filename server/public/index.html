@@ -51,7 +51,7 @@
         // Make synchronous calls
         jQuery.ajaxSetup({async:false});
 
-        function displayGraph(id, check_id, check_name, animate, width, height, updateDelay, transitionDelay) {
+        function displayGraph(id, check_id, check_name, value_label, value_unit, animate, width, height, updateDelay, transitionDelay) {
             // The dimensions of our plot
             var margin = {top: 45, right: 30, bottom: 22, left: 72},
                 width = width - margin.left - margin.right,
@@ -163,7 +163,7 @@
                 .attr("y", -54) // Using absolute coordinates (not so good)
                 .attr("x", 10) // Using absolute coordinates (not so good)
                 .style("text-anchor", "end")
-                .text("Response time (ms)");
+                .text(value_label + " (" + value_unit + ")");
 
             svg_response.append("path")
                 .attr("class", "lineAct")
@@ -457,7 +457,8 @@
             $(document).ready(function(){
                 $.getJSON( "/checks", function( data ) {
                     jQuery.each(data.checks.reverse(), function(index, value) {
-                        displayGraph(index, value.id, value.name, true, w/columns, h, updateDelay, transitionDelay);
+                        console.log(value);
+                        displayGraph(index, value.id, value.name, value.value_label, value.value_unit, true, w/columns, h, updateDelay, transitionDelay);
                     });
                 });
             });

@@ -51,7 +51,7 @@ class PingdomStream(BaseStream):
         i = 0
         while i < 1:
             try:
-                pingdomResult = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
+                pingdomResult = self.ping.method('results/%s/' % self.id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
             except Exception:
                 self.logger.warn("Could not get Pingdom results.", exc_info=True)
                 i = i + 1
@@ -81,14 +81,14 @@ class PingdomStream(BaseStream):
 
         new_data = []
         try:
-            pingdom_results = self.ping.method('results/%d/' % self.id, method='GET', parameters={'limit': 5})['results']
+            pingdom_results = self.ping.method('results/%s/' % self.id, method='GET', parameters={'limit': 5})['results']
         except Exception:
             self.logger.warn("Could not get Pingdom results.", exc_info=True)
             return new_data
 
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
-        for model_input in [pingdom_results[4], pingdom_results[3], pingdom_results[2], pingdom_results[1], pingdom_results[0]]:
+        for model_input in pingdom_results[4::-1]:
             if self.servertime < int(model_input['time']):
                 # Update servertime
                 self.servertime  = int(model_input['time'])
@@ -116,5 +116,5 @@ class PingdomStream(BaseStream):
         checks = ping.method('checks')
         result = []
         for check in checks['checks']:
-            result.append({'id': check['id'], 'name': check['name']})
+            result.append({'id': str(check['id']), 'name': check['name']})
         return result

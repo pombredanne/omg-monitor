@@ -414,8 +414,8 @@
             var columns = 3;
 
             $(document).ready(function(){
-                $.getJSON( "/checks", function( data ) {
-                    jQuery.each(data.checks.reverse(), function(index, value) {
+                $.getJSON( "/monitors", function( data ) {
+                    jQuery.each(data.monitors.reverse(), function(index, value) {
                         // Add row and column to the table
                         $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
                         $("#tr" + parseInt(index/columns)).append("<td id=\"td" + index + "\"><div id=\"r" + index + "\" class=\"plot\"></div></td>");
@@ -434,8 +434,8 @@
             // Remove all existing svg elements (they are all inside divs)
             $("div").empty();
             $(document).ready(function(){
-                $.getJSON( "/checks", function( data ) {
-                    jQuery.each(data.checks.reverse(), function(index, value) {
+                $.getJSON( "/monitors", function( data ) {
+                    jQuery.each(data.monitors.reverse(), function(index, value) {
                         displayGraph(index, value.id, value.name, value.value_label, value.value_unit, true, w/columns, h, updateDelay, transitionDelay);
                     });
                 });

@@ -12,11 +12,11 @@ import (
     "time"
 )
 
-type Checks struct {
-    Checks []CheckType `json:"checks"`
+type Monitors struct {
+    Monitors []MonitorType `json:"monitors"`
 }
 
-type CheckType struct {
+type MonitorType struct {
     ID string `json:"id"`
     Name string `json:"name"`
     ValueLabel string `json:"value_label"`
@@ -53,11 +53,11 @@ var redisPool = redis.NewPool(func() (redis.Conn, error) {
         return c, err
 }, maxConnections)
 
-// Return a JSON with the ids and names of the Pingdom checks
-func getJsonChecks(redisResponse []interface{}) []byte {
+// Return a JSON with the ids, names, value_label and value_unit for all monitors
+func getJsonMonitors(redisResponse []interface{}) []byte {
     conn := redisPool.Get() // Redis connection to get the names for the ids
 
-    checks := make([]CheckType, len(redisResponse))
+    monitors := make([]MonitorType, len(redisResponse))
 
     for k, _ := range redisResponse {
         v := ""
@@ -98,10 +98,10 @@ func getJsonChecks(redisResponse []interface{}) []byte {
                 }
         }
 
-        checks[k] = CheckType{id, name, valueLabel, valueUnit}
+        monitors[k] = MonitorType{id, name, valueLabel, valueUnit}
     }
     conn.Close()
-    b,_ := json.MarshalIndent(Checks{checks}, "", "  ")
+    b,_ := json.MarshalIndent(Monitors{monitors}, "", "  ")
     return b
 } 
 
@@ -155,11 +155,11 @@ func main() {
         return string(getJsonResults(reply))
     })
 
-    // Handle the "/checks" API method
-    m.Get("/checks", func(params martini.Params) string {
+    // Handle the "/monitors" API method
+    m.Get("/monitors", func(params martini.Params) string {
         conn := redisPool.Get()
 
-        // Query redis all the available "checks"
+        // Query redis all the available "monitors"
         reply, err := redis.Values(conn.Do("KEYS", "name:*"))
         for {
             if err == nil { 
@@ -170,7 +170,7 @@ func main() {
                 }
         }
         conn.Close()
-        return string(getJsonChecks(reply))
+        return string(getJsonMonitors(reply))
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")

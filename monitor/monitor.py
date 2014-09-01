@@ -5,7 +5,7 @@ from nupic.frameworks.opf.modelfactory import ModelFactory
 from nupic.data.inference_shifter import InferenceShifter
 import base_model_params # file containing CLA parameters
 from utils import anomaly_likelihood
-from time import strftime, gmtime, sleep
+from time import strftime, sleep
 import calendar
 import os
 
@@ -85,8 +85,9 @@ class Monitor(object):
         anomaly_score = result.inferences['anomalyScore']
 
         # Compute the Anomaly Likelihood
-        likelihood = self.anomalyLikelihood.anomalyProbability(
-        modelInput['value'], anomaly_score, modelInput['time'])
+        likelihood = self.anomalyLikelihood.anomalyProbability(modelInput['value'], 
+                                                               anomaly_score, 
+                                                               modelInput['time'])
                
         # Get timestamp from datetime
         timestamp = calendar.timegm(modelInput['time'].timetuple())
@@ -98,10 +99,9 @@ class Monitor(object):
                 # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
                 self.db.rpush('results:%s' % self.stream.id, 
                               '%s,%d,%d,%.5f,%.5f' % (timestamp,
-                                                         result.rawInput['value'],
-                                                         result.inferences['multiStepBestPredictions'][1],
-                                                         anomaly_score, 
-                                                         likelihood)
-                             )
+                                                      result.rawInput['value'],
+                                                      result.inferences['multiStepBestPredictions'][1],
+                                                      anomaly_score, 
+                                                      likelihood))
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)

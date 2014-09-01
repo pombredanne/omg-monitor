@@ -52,11 +52,11 @@ class Monitor(object):
         # Write metadata to Redis
         try:
             # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
-            self.db.set('name:%d' % self.stream.id, self.stream.name)
-            self.db.set('value_label:%d' % self.stream.id, self.stream.value_label)
-            self.db.set('value_unit:%d' % self.stream.id, self.stream.value_unit)
+            self.db.set('name:%s' % self.stream.id, self.stream.name)
+            self.db.set('value_label:%s' % self.stream.id, self.stream.value_label)
+            self.db.set('value_unit:%s' % self.stream.id, self.stream.value_unit)
         except Exception:
-            self.logger.warn("Could not write results to redis.")
+            self.logger.warn("Could not write results to redis.", exc_info=True)
 
     def train(self):
         data = self.stream.historic_data()
@@ -96,7 +96,7 @@ class Monitor(object):
         if inference[1]:
             try:
                 # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
-                self.db.rpush('results:%d' % self.stream.id, 
+                self.db.rpush('results:%s' % self.stream.id, 
                               '%s,%d,%d,%.5f,%.5f' % (timestamp,
                                                          result.rawInput['value'],
                                                          result.inferences['multiStepBestPredictions'][1],
@@ -104,4 +104,4 @@ class Monitor(object):
                                                          likelihood)
                              )
             except Exception:
-                self.logger.warn("Could not write results to redis.")
+                self.logger.warn("Could not write results to redis.", exc_info=True)

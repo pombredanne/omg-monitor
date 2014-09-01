@@ -4,7 +4,6 @@ import sys
 import os
 import multiprocessing
 from monitor import Monitor
-from streams.pingdom import PingdomStream
 import logging
 import logging.handlers
 import yaml

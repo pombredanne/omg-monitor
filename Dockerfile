@@ -17,6 +17,9 @@ RUN \
     rm ../redis-2.6.16.tar.gz;
 #RUN
 
+# Install librato
+RUN pip install librato-metrics
+
 # Add redis and go to path
 ENV GOPATH /home/docker/go
 ENV PATH /home/docker/redis-2.6.16/src:/usr/local/go/bin:$PATH
@@ -28,9 +31,7 @@ RUN \
 #RUN
 
 # Copy omg-monitor directory
-ADD start.py /home/docker/omg-monitor/start.py
 ADD startup.sh /home/docker/omg-monitor/startup.sh
-ADD utils/ /home/docker/omg-monitor/utils
 ADD monitor/ /home/docker/omg-monitor/monitor
 ADD server/ /home/docker/omg-monitor/server
 

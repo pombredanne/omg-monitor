@@ -7,7 +7,6 @@ from monitor import Monitor
 from streams.pingdom import PingdomStream
 import logging
 import logging.handlers
-import redis
 import ConfigParser
 import importlib
 
@@ -62,8 +61,8 @@ if __name__ == "__main__":
 
     try:
         streams = StreamClass.available_streams(credentials)
-    except Exception:
-        logger.error('Could connect to stream.')
+    except Exception, e:
+        logger.error('Could not connect to stream.', exc_info=True)
         sys.exit(0)
 
     # Get parameters
@@ -75,7 +74,7 @@ if __name__ == "__main__":
         # Start the monitors sessions
         jobs_list = []                    
         for stream in streams:
-            stream_id = int(stream['id'])
+            stream_id = stream['id']
             stream_name = stream['name']
             
             logger.info("Starting stream: %s", stream_name)
@@ -93,13 +92,12 @@ if __name__ == "__main__":
         # Start the monitors sessions
         jobs_list = []
         for _, stream_id in config.items('monitors'):
-            print stream_id
-            stream_id = int(stream_id)
+            stream_id = stream_id
             stream_name = None    
 
             # Check if ID exist
             for stream in streams:
-                if stream_id == int(stream['id']):
+                if stream_id == stream['id']:
                     stream_name = stream['name']
         
             if stream_name is None:

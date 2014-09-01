@@ -81,7 +81,7 @@ class LibratocpuStream(BaseStream):
 
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
-        for modelInput in [librato_results[4], librato_results[3], librato_results[2], librato_results[1], librato_results[0]]:
+        for modelInput in librato_results[4::-1]:
             if self.servertime < modelInput['measure_time']:
                 servertime  = modelInput['measure_time']
                 modelInput['time'] = datetime.utcfromtimestamp(servertime)

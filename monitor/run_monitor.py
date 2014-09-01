@@ -25,12 +25,12 @@ logger.setLevel(logging.INFO)
 # Multiprocessing logger
 multiprocessing.log_to_stderr(logging.DEBUG)
 
-def run(StreamClass, stream_config, resolution):
+def run(StreamClass, stream_config, resolution, seconds_per_request):
     # Instantiate monitor
     logger.info("Stantiating monitor: %s", stream_config['name'])
 
     stream = StreamClass(stream_config)
-    monitor = Monitor(resolution, stream)
+    monitor = Monitor(resolution, seconds_per_request, stream)
 
     # Train monitor
     logger.info("Starting training: %s", stream_config['name'])
@@ -67,6 +67,7 @@ if __name__ == "__main__":
 
         # Get parameters
         resolution = int(config['parameters']['encoder_resolution'])
+        seconds_per_request = int(config['parameters']['seconds_per_request'])
         moving_average_window = int(config['parameters']['moving_average_window'])
 
         # If don't have specfied monitors, run everything!
@@ -86,7 +87,7 @@ if __name__ == "__main__":
                                  'credentials': credentials}
                 
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
                 jobs_list[len(jobs_list) - 1].start()
         else: # Run streams passed
             # Start the monitors sessions
@@ -112,7 +113,7 @@ if __name__ == "__main__":
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
                 jobs_list[len(jobs_list) - 1].start()
 
     for job in jobs_list:

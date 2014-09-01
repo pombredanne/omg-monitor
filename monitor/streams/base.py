@@ -5,9 +5,9 @@ class abstractclassmethod(classmethod):
     """ Decorator for a abstract class method. """
     __isabstractmethod__ = True
 
-    def __init__(self, callable):
-        callable.__isabstractmethod__ = True
-        super(abstractclassmethod, self).__init__(callable)
+    def __init__(self, callable_):
+        callable_.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable_)
 
 class BaseStream(object):
     """ Base class to provide a stream of data to NuPIC. """

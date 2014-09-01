@@ -4,20 +4,76 @@
 
 [![Docker build](http://dockeri.co/image/cloudwalk/monitor)](https://registry.hub.docker.com/u/cloudwalk/monitor/)
 
-This program uses [NuPIC] to catch anomalies in [Pingdom] monitored response times. It runs as a [Docker] container, so to use it you just have to run the container (see [Usage](#usage)).
+This program uses [NuPIC] to catch anomalies in streams of data. It runs as a [Docker] container, so to use it you just have to run the container with proper configuration files (see [Usage](#usage)).
+
+Currently we support the following streams:
+* [Pingdom] response times
+* [Librato] AWS CPU utilization
 
 Here is a simplified flowchart of the project:
 
-![flowchart](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/omg-monitor-flow.svg)
+![flowchart](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/new-omg-monitor.svg)
 
-## Input
+## Streams
 
-The inputs are response times gathered by [Pingdom]. We use the [python-restful-pingdom] module to get the Pingdom data used to train the [NuPIC] model. The model is first trained with the last 1440 response times of the specified checks,
-after which it starts learning online, making a request per minute per check to Pingdom. 
+A stream, basically, implements an abstract Python class with methods to gather historical data and real-time data. Those methods should return lists of pairs contained in dictionaries, like that: `[{'value': 123, 'time': datetime(...)}, {'value': 122, 'time': datetime(...)}]`. The `value` field is feed into NuPIC for anomaly detection
+
+For our current streams, we have the following values:
+
+* Pingdom: Response time in ms.
+* Librato: AWS CPU utilization in %.
+
+## Monitor
+
+A monitor is composed by a stream and a NuPIC model that fed into that stream.
+
+The script `monitor/run_monitor.py` reads a configuration YAML file and starts batches of monitors according to the configuration
+
+### Configuration files
+
+Configurations files are similar in many aspects, the main difference being the credentails section, as the need credentials can be different for different streams. You can notice the difference in the following templates.
+
+An important point is in regard with the `monitors` section, which may be ommited for any configuration file, in which case it will start monitors for every stream availabe of that type. For example, for Pingdom, it will start a monitor for each check found under the given credentials.
+
+#### Pingdom
+
+```yaml
+stream: pingdom
+
+credentials:
+    username: USERNAME
+    password: PASSWORD
+    appkey: APPKEY
+
+parameters:
+    moving_average_window: 30
+    encoder_resolution: 25
+
+monitors: [123456, 875642]
+```
+
+#### Librato AWS CPU
+
+```yaml
+stream: libratocpu
+
+credentials:
+    username: USERNAME
+    token: TOKEN
+
+parameters:
+    moving_average_window: 5
+    encoder_resolution: 25
+
+monitors: [cw.ajsujasdjisad, cw.asdsdsadasdasd]
+```
 
 ## Output
 
-NuPIC calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,status,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[CHECK_ID]"`.
+Each monitor's NuPIC model calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[ID]"`.
+It is also saved, for convenience, a name for the monitor in key `"name:[ID]"`, a label for the values being monitored in `"value_label:[ID]"` and a unit in `"value_unit:[ID]"`.
+
+As a concrete example, if you start a monitor for a Pingdom check with `id = 123456`, it will save the keys `value_label:123456 "Response time` and `value_unit:1223456 "ms"`. 
 
 ## API
 
@@ -25,23 +81,52 @@ The results can be accessed via a RESTful API written in [Go] using [Martini].
 
 It is very simplistic:
 
-* To get the servers available in the supplied Pingdom account:
+* To get the monitors running:
 ```
-/checks
+/monitors
 ```
-The JSON string returned contains only the IDs and names of the checks.
+The JSON list returned is of the form:
+```json
+{
+  "monitors": [
+    {
+      "id": "cw.us-east-xxx",
+      "name": "Machine X",
+      "value_label": "CPU utilization",
+      "value_unit": "%"
+    },
+    {
+      "id": "cw.us-east-yyy",
+      "name": "Machine Y",
+      "value_label": "CPU utilization",
+      "value_unit": "%"
+    },
+    {
+      "id": "123456",
+      "name": "staging manager",
+      "value_label": "Response time",
+      "value_unit": "ms"
+    },
+    {
+      "id": "654321",
+      "name": "staging switch",
+      "value_label": "Response time",
+      "value_unit": "ms"
+    }
+  ]
+}
+```
 
-* To get the last `[N]` results for `[CHECK_ID]`:
+* To get the last `[N]` results for `[ID]`:
 ```
-/results/[CHECK_ID]?limit=[N]
+/results/[ID]?limit=[N]
 ```
   The resulting JSON string has the following fields:
-  * actual: Actual response time at the given time instant.
-  * predicted: Response time prediction for the given time instant.
+  * actual: actual value at the given time instant.
+  * predicted: value prediction for the given time instant.
   * anomaly: the unlikelihood of the actual result in comparisson with the predicted result.
   * likelihood: the likelihood that the last anomaly score follows the historical probability distribution.
-  * status: status of the server as returned by Pingdom (up, down, unconfirmed_down).
-  * time: UNIX time when Pingdom got the actual response time.
+  * time: UNIX time when data was originally gathered.
   If no limit is specified it is assumed that `N=0`, so that the API returns all the results for the given `CHECK_ID`.
 
 ## API Client
@@ -58,22 +143,18 @@ See the session [Screenshots](#screenshots) for some examples.
 
 With [Docker] installed, do:
 ```
-sudo docker run -d -p [PUBLIC_PORT]:5000 cloudwalk/monitor [USERNAME] [PASSWORD] [APPKEY] [CHECK_ID_1] [CHECK_ID_2] ...
+sudo docker run -d -p -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILES/ [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
 ```
 
-The parameters that we must specify:
+As we must pass some configuration files to the container, we mount the host volume containing those files inside the container, passing the containers absolute path for the configuration files as an argument to the container.
 
-* `[PUBLIC_PORT]`: Public port number used by the Go server.
-
-* `[USERNAME] [PASSWORD] [APPKEY]`: Pingdom's credentials: username (may be your email that you login with), password and app-key.
-
-* (Optional) `[CHECK_ID_1] [CHECK_ID_2] ...`: Pingdom's IDs to monitor. If we don't specify any IDs, the monitor will use all available IDs from the given Pingdom account.
+Other parameter that we must specify is the  `[PUBLIC_PORT]` used by the Go server.
 
 ## Log files
 
 The logs generated by Redis, Martini and the monitors are saved in a directory specified by `LOG_DIR` environment variable, which defaults to `LOG_DIR=/var/log/docker/monitor`. To access the logs from the host, outside de container, we can mount a host directory to LOG_DIR when starting the container, using flag `-v`:
 ```
-sudo docker run -d -v /path/to/host/log/dir:/var/log/docker/monitor -p [PUBLIC_PORT]:5000 cloudwalk/monitor [USERNAME] [PASSWORD] [APPKEY] [CHECK_ID_1] [CHECK_ID_2] ...
+sudo docker run -d -v /HOST/PATH/TO/LOG/DIR:/var/log/docker/monitor -p [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
 ``` 
 
 An alternative is to mount the volume from another container, using the `--volumes-from` flag.
@@ -82,7 +163,7 @@ An alternative is to mount the volume from another container, using the `--volum
 
 ### What happens when the container is started?
 
-The Docker container entrypoint is the script [startup.sh], responsible for starting the Redis and Go servers and for running the [start.py] script, which will start one [monitor.py] instance for each check, each one in a separate thread (running in parallel). The script [monitor.py] contains the NuPIC code. The [start.py] script will also fetch the available checks from the given Pingdom account and save them in the Redis server with key `"checks"` and value as a list of strings with the IDs. It will also create keys of the form `"check:[CHECK_ID]"` that stores the corresponding check's name. All that information is used by our API. 
+The Docker container entrypoint is the script [startup.sh], responsible for starting the Redis and Go servers and for running the [monitor/run_monitor.py] script, which will start one monitor instance for each ID in each stream configuration file, each one in a separate thread (running in parallel). 
 
 ### How to build the image?
 
@@ -92,7 +173,7 @@ To build the Docker image locally, clone this repository and do:
 
     sudo docker build -t "[USERNAME]/monitor" .
 
-Note that our [Dockerfile] uses the [numenta/nupic] image, as that image already contains a NuPIC installation.
+Note that our [Dockerfile] uses the [cloudwalk/nupic] image, as that image already contains a NuPIC installation. We don't use `numenta/nupic` as it is rapidly changing, so we prefer a frozen version of it
 
 ## Screenshots
 
@@ -127,6 +208,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [NuPIC]:https://github.com/numenta/nupic
 [Docker]:https://www.docker.io/
 [Pingdom]:https://www.pingdom.com/
+[Librato]:https://metrics.librato.com/
 [Redis]:http://redis.io/
 [Martini]:https://github.com/codegangsta/martini
 [Go]:http://golang.org/
@@ -137,8 +219,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [allanino/nupic]:https://github.com/allanino/docker-nupic
 
 [Dockerfile]:https://github.com/allanino/omg-monitor/blob/master/Dockerfile
-[monitor.py]:https://github.com/allanino/omg-monitor/blob/master/monitor/monitor.py
-[start.py]:https://github.com/allanino/omg-monitor/blob/master/start.py
+[monitor/run_monitor.py]:https://github.com/allanino/omg-monitor/blob/master/monitor/run_monitor.py
 [startup.sh]:https://github.com/allanino/omg-monitor/blob/master/startup.sh
 [docker_image]:https://index.docker.io/u/cloudwalk/monitor/
 [2]:https://github.com/allanino/omg-monitor/blob/master/server/public/index.html

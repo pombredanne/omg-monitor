@@ -54,7 +54,7 @@ class BaseStream(object):
         pass
 
     @abstractclassmethod
-    def available_streams(cls):
+    def available_streams(cls, credentials):
         """ Return a list with available streams for the class implementing this. Should return a list : 
                 [{'id': i1, 'name': n1}, {'id': i2, 'name': n2}] 
         """

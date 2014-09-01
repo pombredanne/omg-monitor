@@ -457,7 +457,6 @@
             $(document).ready(function(){
                 $.getJSON( "/monitors", function( data ) {
                     jQuery.each(data.monitors.reverse(), function(index, value) {
-                        console.log(value);
                         displayGraph(index, value.id, value.name, value.value_label, value.value_unit, true, w/columns, h, updateDelay, transitionDelay);
                     });
                 });

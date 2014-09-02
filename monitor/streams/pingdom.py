@@ -78,6 +78,8 @@ class PingdomStream(BaseStream):
 
     def new_data(self):
         """ Return list of new data points since last fetching. """
+        
+        self.logger.info("Server time before processing results: %d", self.servertime)
 
         new_data = []
         try:
@@ -85,6 +87,11 @@ class PingdomStream(BaseStream):
         except Exception:
             self.logger.warn("Could not get Pingdom results.", exc_info=True)
             return new_data
+
+        self.logger.info("Results fetched:")
+        self.logger.info("%\t%12s%12s", "time", "raw_value")
+        for r in librato_results:
+            self.logger.info("\t%12d%12.3f", r['time'], r['responsetime'])
 
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
@@ -102,6 +109,9 @@ class PingdomStream(BaseStream):
                 model_input['value'] = self._moving_average()
 
                 new_data.append(model_input)
+        
+        self.logger.info("Server time after processing results: %d", self.servertime)
+        self.logger.info("New data: %s", new_data)
         return new_data
 
     @classmethod

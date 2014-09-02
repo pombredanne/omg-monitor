@@ -72,6 +72,9 @@ class LibratocpuStream(BaseStream):
     def new_data(self):
         """ Return list of new data points since last fetching. """
 
+        self.logger.info("Server time before processing results: %d", self.servertime)
+
+        # Fetch last 5 results
         new_data = []
         try:
             cpu = self.libr.get('AWS.EC2.CPUUtilization', count=5, resolution=60, source=self.id)
@@ -80,18 +83,26 @@ class LibratocpuStream(BaseStream):
             self.logger.warn("Could not get Librato AWS CPU results.", exc_info=True)
             return new_data
 
+
+        self.logger.info("Results fetched:")
+        self.logger.info("\t%12s%12s", "time", "raw_value")
+        for r in librato_results:
+            self.logger.info("\t%12d%12.3f", r['measure_time'], r['value'])
+
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
         for modelInput in librato_results[-5::1]:
             if self.servertime < modelInput['measure_time']:
                 self.servertime  = modelInput['measure_time']
-                modelInput['time'] = datetime.utcfromtimestamp(servertime)
+                modelInput['time'] = datetime.utcfromtimestamp(self.servertime)
 
                 self.history.appendleft(float(modelInput['value']))
                 modelInput['value'] = self._moving_average()
 
                 new_data.append(modelInput)
 
+        self.logger.info("Server time after processing results: %d", self.servertime)
+        self.logger.info("New data: %s", new_data)
         return new_data
 
     @classmethod

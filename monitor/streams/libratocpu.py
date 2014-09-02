@@ -86,7 +86,7 @@ class LibratocpuStream(BaseStream):
 
         self.logger.info("Results fetched:")
         self.logger.info("\t%12s%12s", "time", "raw_value")
-        for r in librato_results:
+        for r in librato_results[-5::1]:
             self.logger.info("\t%12d%12.3f", r['measure_time'], r['value'])
 
         # If any result contains new responses (ahead of [servetime]) process it. 

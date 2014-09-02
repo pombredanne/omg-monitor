@@ -89,8 +89,8 @@ class PingdomStream(BaseStream):
             return new_data
 
         self.logger.info("Results fetched:")
-        self.logger.info("%\t%12s%12s", "time", "raw_value")
-        for r in pingdom_results:
+        self.logger.info("\t%12s%12s", "time", "raw_value")
+        for r in pingdom_results[4::-1]:
             self.logger.info("\t%12d%12.3f", r['time'], r['responsetime'])
 
         # If any result contains new responses (ahead of [servetime]) process it. 

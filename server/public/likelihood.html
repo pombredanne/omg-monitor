@@ -48,6 +48,16 @@
     </style>
 
     <script>
+        function getURLParameter(name) {
+            return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+        }
+
+        // Get URL parameter specifying how many points to get (default to 60)
+        var limit = getURLParameter('limit')
+        if(limit === null){
+            limit = 60
+        }
+
         // Make synchronous calls
         jQuery.ajaxSetup({async:false});
 
@@ -101,7 +111,7 @@
              var data = []
 
             $(document).ready(function(){
-                $.getJSON( "/results/" + check_id + "?limit=60", function( dataset ) {
+                $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
                     data = dataset.results
                 });
             });
@@ -372,7 +382,7 @@
                     oldtime = new Date(0);
                 }
                 $(document).ready(function(){
-                    $.getJSON( "/results/" + check_id + "?limit=60", function( dataset ) {
+                    $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
                         if(data[0].time.getTime() != parseInt(dataset.results[0].time)*1000)
                             update = true
                         data = dataset.results

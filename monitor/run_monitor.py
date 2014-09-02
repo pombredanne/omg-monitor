@@ -3,6 +3,7 @@
 import sys
 import os
 import multiprocessing
+import threading
 from monitor import Monitor
 import logging
 import logging.handlers
@@ -25,7 +26,52 @@ logger.setLevel(logging.INFO)
 # Multiprocessing logger
 multiprocessing.log_to_stderr(logging.DEBUG)
 
+def validate(config):
+    """ Validate configuration file. 
+        Input: dict already parsed with yaml.load.
+        Output: string with success or error message.
+    """
+
+    message = ''
+    keys = config.keys()
+    if 'stream' not in keys:
+        message = message + 'Stream not specfied.\n'
+    
+    if 'credentials' not in keys:
+        message = message + 'Credentials not specfied.\n'
+
+    if 'parameters' not in keys:
+        message = message + 'Parameters not specfied.\n'
+    else:
+        if 'moving_average_window' not in config['parameters'].keys():
+            message = message + 'Moving average window not specfied.\n'
+        elif not isinstance(config['parameters']['moving_average_window'], (int, long)):
+            message = message + 'Moving average window should be an integer.\n'
+
+        if 'encoder_resolution' not in config['parameters'].keys():
+            message = message + 'Encoder resolution not specfied.\n'
+        elif not isinstance(config['parameters']['encoder_resolution'], (int, long)):
+            message = message + 'Encoder resolution should be an integer.\n'
+
+        if 'seconds_per_request' not in config['parameters'].keys():
+            message = message + 'Seconds per request not specfied.\n'
+        elif not isinstance(config['parameters']['seconds_per_request'], (int, long)):
+            message = message + 'Seconds per request should be an integer.\n'
+
+    if 'worker' not in keys:
+        message = message + 'Worker not specfied.\n'
+    elif config['worker'] not in ['thread', 'process']:
+            message = message + 'Worker should be "thread" or "process".\n'
+
+    if 'monitors' in keys:
+        if not isinstance(config['monitors'], list):
+            message = message + 'Monitors should be a list of ids.\n'
+
+    return message
+
 def run(StreamClass, stream_config, resolution, seconds_per_request):
+    """ Instantiate a monitor for StreamClass using given configurations """
+
     # Instantiate monitor
     logger.info("Stantiating monitor: %s", stream_config['name'])
 
@@ -47,8 +93,21 @@ if __name__ == "__main__":
     
     jobs_list = []
     for config_file in sys.argv[1:]:
-        config = yaml.load(file(config_file, 'r'))
-        
+        # Parse YAML configuration file
+        try:
+            config = yaml.load(file(config_file, 'r'))
+        except Exception:
+            logger.error('Invalid configuration file: %s', config_file, exc_info=True)
+            continue
+ 
+        # Validade configuration
+        validation_message = validate(config)
+        if validation_message != '':
+            logger.error('Invalid configuration file: %s\n%s', config_file, validation_message)
+            continue
+        logger.info('Configuration file validated.')
+
+        # Get stream type and set StreamClass from it
         stream_type= config['stream']
 
         stream_module = importlib.import_module("streams.%s" % stream_type)
@@ -65,14 +124,23 @@ if __name__ == "__main__":
             logger.error('Could not connect to stream.', exc_info=True)
             sys.exit(0)
 
-        # Get parameters
+        # Get worker architecture (process or thread)
+        worker =  config['worker']
+        if worker == "process":
+            start = multiprocessing.Process
+        elif worker == "thread":
+            start = threading.Thread
+
+        # Get other parameters
         resolution = int(config['parameters']['encoder_resolution'])
         seconds_per_request = int(config['parameters']['seconds_per_request'])
         moving_average_window = int(config['parameters']['moving_average_window'])
 
         # If don't have specfied monitors, run everything!
         monitors_ids = config.get('monitors', None)
-        if monitors_ids is None: 
+        if monitors_ids is None:
+            logger.info('No monitors IDs in configuration file. Will run everything.')
+
             # Start the monitors sessions                 
             for stream in streams:
                 stream_id = stream['id']
@@ -87,7 +155,7 @@ if __name__ == "__main__":
                                  'credentials': credentials}
                 
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
+                jobs_list.append(start(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
                 jobs_list[len(jobs_list) - 1].start()
         else: # Run streams passed
             # Start the monitors sessions
@@ -113,7 +181,7 @@ if __name__ == "__main__":
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
+                jobs_list.append(start(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
                 jobs_list[len(jobs_list) - 1].start()
 
     for job in jobs_list:

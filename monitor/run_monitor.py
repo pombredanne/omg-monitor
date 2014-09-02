@@ -61,7 +61,7 @@ def validate(config):
     if 'worker' not in keys:
         message = message + 'Worker not specfied.\n'
     elif config['worker'] not in ['thread', 'process']:
-            message = message + 'Worker should be "thread" or "process".\n'
+        message = message + 'Worker should be "thread" or "process".\n'
 
     if 'monitors' in keys:
         if not isinstance(config['monitors'], list):

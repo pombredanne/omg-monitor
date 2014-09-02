@@ -34,7 +34,7 @@ class Monitor(object):
         self.stream = stream
 
         # Setup class variables
-        self.seconds_per_request = 60
+        self.seconds_per_request = seconds_per_request
         self.db = redis.Redis("localhost")
 
         # Setup logging

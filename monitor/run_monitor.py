@@ -69,14 +69,20 @@ def validate(config):
 
     return message
 
-def run(StreamClass, stream_config, resolution, seconds_per_request):
+def run(stream_config, monitor_config):
     """ Instantiate a monitor for StreamClass using given configurations """
 
     # Instantiate monitor
     logger.info("Stantiating monitor: %s", stream_config['name'])
 
+    # Instantiate stream
     stream = StreamClass(stream_config)
-    monitor = Monitor(resolution, seconds_per_request, stream)
+
+    # Add stream to monitor configuration
+    monitor_config['stream'] = stream
+
+    # Instantiate monitor
+    monitor = Monitor(monitor_config)
 
     # Train monitor
     logger.info("Starting training: %s", stream_config['name'])
@@ -131,9 +137,14 @@ if __name__ == "__main__":
         elif worker == "thread":
             start = threading.Thread
 
-        # Get other parameters
-        resolution = int(config['parameters']['encoder_resolution'])
-        seconds_per_request = int(config['parameters']['seconds_per_request'])
+        # Get configurations to pass to monitor class
+        monitor_config = {'resolution': int(config['parameters']['encoder_resolution']),
+                          'seconds_per_request': int(config['parameters']['seconds_per_request']),
+                          'webhook': config.get('webhook', None),
+                          'anomaly_threshold': config.get('anomaly_threshold', None),
+                          'likelihood_threshold': config.get('likelihood_threshold', None)}
+
+        # Get other stream parameters
         moving_average_window = int(config['parameters']['moving_average_window'])
 
         # If don't have specfied monitors, run everything!
@@ -155,7 +166,7 @@ if __name__ == "__main__":
                                  'credentials': credentials}
                 
                 # Start job
-                jobs_list.append(start(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
+                jobs_list.append(start(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
         else: # Run streams passed
             # Start the monitors sessions
@@ -180,8 +191,9 @@ if __name__ == "__main__":
                                  'name': stream_name,
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
+                
                 # Start job
-                jobs_list.append(start(target=run, args=(StreamClass, stream_config, resolution, seconds_per_request)))
+                jobs_list.append(start(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
 
     for job in jobs_list:

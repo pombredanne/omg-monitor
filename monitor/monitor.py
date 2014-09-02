@@ -98,12 +98,12 @@ class Monitor(object):
                 
         if inference[1]:
             try:
-                # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
+                # Save in redis with key = 'results:monitor_id' and value = 'time, actual, prediction, anomaly'
                 self.db.rpush('results:%s' % self.stream.id, 
                               '%s,%.5f,%.5f,%.5f,%.5f' % (timestamp,
-                                                      result.rawInput['value'],
-                                                      result.inferences['multiStepBestPredictions'][1],
-                                                      anomaly_score, 
-                                                      likelihood))
+                                                          result.rawInput['value'],
+                                                          result.inferences['multiStepBestPredictions'][1],
+                                                          anomaly_score, 
+                                                          likelihood))
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)

@@ -61,18 +61,18 @@ class PingdomStream(BaseStream):
             i = i + 1
 
         historic_data = []
-        for modelInput in results:
+        for model_input in results:
              # If dont' have response time is because it's not up, so set it to a large number
-            if 'responsetime' not in modelInput:
-                modelInput['responsetime'] = self.timeout_default
+            if 'responsetime' not in model_input:
+                model_input['responsetime'] = self.timeout_default
 
-            self.history.appendleft(float(modelInput['responsetime']))
-            modelInput['value'] = self._moving_average()
+            self.history.appendleft(float(model_input['responsetime']))
+            model_input['value'] = self._moving_average()
 
-            self.servertime  = int(modelInput['time'])
-            modelInput['time'] = datetime.utcfromtimestamp(self.servertime)
+            self.servertime  = int(model_input['time'])
+            model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
-            historic_data.append(modelInput)
+            historic_data.append(model_input)
 
         return historic_data
 

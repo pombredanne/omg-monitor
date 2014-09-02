@@ -56,15 +56,15 @@ class LibratocpuStream(BaseStream):
                 logger.warn("Could not get Librato AWS CPU results.", exc_info=True)
                 continue
                  
-            for modelInput in measurements:
-                if  self.servertime < modelInput['measure_time']:
-                    self.servertime  = modelInput['measure_time']
-                    modelInput['time'] = datetime.utcfromtimestamp(self.servertime)
+            for model_input in measurements:
+                if  self.servertime < model_input['measure_time']:
+                    self.servertime  = model_input['measure_time']
+                    model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
-                    self.history.appendleft(float(modelInput['value']))
-                    modelInput['value'] = self._moving_average()
+                    self.history.appendleft(float(model_input['value']))
+                    model_input['value'] = self._moving_average()
 
-                    historic_data.append(modelInput)
+                    historic_data.append(model_input)
             time_start = time_start + 100*60
 
         return historic_data
@@ -91,15 +91,15 @@ class LibratocpuStream(BaseStream):
 
         # If any result contains new responses (ahead of [servetime]) process it. 
         # We check the last 5 results, so that we don't many lose data points.
-        for modelInput in librato_results[-5::1]:
-            if self.servertime < modelInput['measure_time']:
-                self.servertime  = modelInput['measure_time']
-                modelInput['time'] = datetime.utcfromtimestamp(self.servertime)
+        for model_input in librato_results[-5::1]:
+            if self.servertime < model_input['measure_time']:
+                self.servertime  = model_input['measure_time']
+                model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
-                self.history.appendleft(float(modelInput['value']))
-                modelInput['value'] = self._moving_average()
+                self.history.appendleft(float(model_input['value']))
+                model_input['value'] = self._moving_average()
 
-                new_data.append(modelInput)
+                new_data.append(model_input)
 
         self.logger.info("Server time after processing results: %d", self.servertime)
         self.logger.info("New data: %s", new_data)

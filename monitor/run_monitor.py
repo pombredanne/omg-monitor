@@ -3,7 +3,6 @@
 import sys
 import os
 import multiprocessing
-import threading
 from monitor import Monitor
 import logging
 import logging.handlers
@@ -57,11 +56,6 @@ def validate(config):
             message = message + 'Seconds per request not specfied.\n'
         elif not isinstance(config['parameters']['seconds_per_request'], (int, long)):
             message = message + 'Seconds per request should be an integer.\n'
-
-    if 'worker' not in keys:
-        message = message + 'Worker not specfied.\n'
-    elif config['worker'] not in ['thread', 'process']:
-        message = message + 'Worker should be "thread" or "process".\n'
 
     if 'monitors' in keys:
         if not isinstance(config['monitors'], list):
@@ -124,18 +118,12 @@ if __name__ == "__main__":
         for name, value in config['credentials'].items():
             credentials[name] = value
 
+        # Get all streams available for StreamClass
         try:
             streams = StreamClass.available_streams(credentials)
         except Exception, e:
             logger.error('Could not connect to stream.', exc_info=True)
             sys.exit(0)
-
-        # Get worker architecture (process or thread)
-        worker =  config['worker']
-        if worker == "process":
-            start = multiprocessing.Process
-        elif worker == "thread":
-            start = threading.Thread
 
         # Get configurations to pass to monitor class
         monitor_config = {'resolution': int(config['parameters']['encoder_resolution']),
@@ -157,8 +145,6 @@ if __name__ == "__main__":
                 stream_id = stream['id']
                 stream_name = stream['name']
                 
-                logger.info("Starting stream: %s", stream_name)
-                
                 # Configuration to pass to stream class
                 stream_config = {'id': stream_id, 
                                  'name': stream_name,
@@ -166,7 +152,7 @@ if __name__ == "__main__":
                                  'credentials': credentials}
                 
                 # Start job
-                jobs_list.append(start(target=run, args=(stream_config, monitor_config)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
         else: # Run streams passed
             # Start the monitors sessions
@@ -183,9 +169,6 @@ if __name__ == "__main__":
                     logger.warn("Stream ID %s doesn't exist. Skipping this one.", stream_id)
                     continue
                 
-
-                logger.info("Starting stream: %s", stream_name)
-                
                 # Configuration to pass to stream class
                 stream_config = {'id': stream_id, 
                                  'name': stream_name,
@@ -193,9 +176,9 @@ if __name__ == "__main__":
                                  'credentials': credentials}
                 
                 # Start job
-                jobs_list.append(start(target=run, args=(stream_config, monitor_config)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
-
+    # Join jobs
     for job in jobs_list:
-        logger.info("Joining %s.", job.name)
+        logger.info("Joining job %s.", job.name)
         job.join()

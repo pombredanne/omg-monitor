@@ -151,4 +151,4 @@ class Monitor(object):
         response = requests.post(self.webhook, data=payload, headers=headers)
             
         self.logger.info('Anomaly posted with status code %d: %s', 
-            response.status_code, response.text)
+                         response.status_code, response.text)

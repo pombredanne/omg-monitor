@@ -14,6 +14,4 @@ parameters:
 
 webhook: http://localhost/listening
 
-worker: process # Can be: process or thread
-
 monitors: [123456, 875642]

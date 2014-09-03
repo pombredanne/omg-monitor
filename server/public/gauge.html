@@ -73,8 +73,8 @@
         var h = parseInt(0.8*w);
         $("table").empty();
         $(document).ready(function(){
-            $.getJSON( "/checks", function( data ) {
-                jQuery.each(data.checks.reverse(), function(index, value) {
+            $.getJSON( "/monitors", function( data ) {
+                jQuery.each(data.monitors.reverse(), function(index, value) {
                     // Add row and column to the table
                     $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
                     $("#tr" + parseInt(index/columns)).append(
@@ -90,8 +90,8 @@
         //Remove all existing svg elements (they are all inside divs)
         $("div").empty();
         $(document).ready(function(){
-            $.getJSON( "/checks", function( data ) {
-                jQuery.each(data.checks.reverse(), function(index, value) {
+            $.getJSON( "/monitors", function( data ) {
+                jQuery.each(data.monitors.reverse(), function(index, value) {
                     displayGraph(index, value.id, value.name, updateDelay);
                 });
             });

@@ -48,10 +48,20 @@
     </style>
 
     <script>
+        function getURLParameter(name) {
+            return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+        }
+
+        // Get URL parameter specifying how many points to get (default to 60)
+        var limit = getURLParameter('limit')
+        if(limit === null){
+            limit = 60
+        }
+
         // Make synchronous calls
         jQuery.ajaxSetup({async:false});
 
-        function displayGraph(id, check_id, check_name, animate, width, height, updateDelay, transitionDelay) {
+        function displayGraph(id, check_id, check_name, value_label, value_unit, animate, width, height, updateDelay, transitionDelay) {
             // The dimensions of our plot
             var margin = {top: 45, right: 30, bottom: 22, left: 72},
                 width = width - margin.left - margin.right,
@@ -101,7 +111,7 @@
              var data = []
 
             $(document).ready(function(){
-                $.getJSON( "/results/" + check_id + "?limit=60", function( dataset ) {
+                $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
                     data = dataset.results
                 });
             });
@@ -158,7 +168,7 @@
                 .attr("y", -54) // Using absolute coordinates (not so good)
                 .attr("x", 10) // Using absolute coordinates (not so good)
                 .style("text-anchor", "end")
-                .text("Response time (ms)");
+                .text(value_label + " (" + value_unit + ")");
 
             svg_response.append("path")
                 .attr("class", "lineAct")
@@ -372,7 +382,7 @@
                     oldtime = new Date(0);
                 }
                 $(document).ready(function(){
-                    $.getJSON( "/results/" + check_id + "?limit=60", function( dataset ) {
+                    $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
                         if(data[0].time.getTime() != parseInt(dataset.results[0].time)*1000)
                             update = true
                         data = dataset.results
@@ -414,8 +424,8 @@
             var columns = 3;
 
             $(document).ready(function(){
-                $.getJSON( "/checks", function( data ) {
-                    jQuery.each(data.checks.reverse(), function(index, value) {
+                $.getJSON( "/monitors", function( data ) {
+                    jQuery.each(data.monitors.reverse(), function(index, value) {
                         // Add row and column to the table
                         $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
                         $("#tr" + parseInt(index/columns)).append("<td id=\"td" + index + "\"><div id=\"r" + index + "\" class=\"plot\"></div></td>");
@@ -434,9 +444,9 @@
             // Remove all existing svg elements (they are all inside divs)
             $("div").empty();
             $(document).ready(function(){
-                $.getJSON( "/checks", function( data ) {
-                    jQuery.each(data.checks.reverse(), function(index, value) {
-                        displayGraph(index, value.id, value.name, true, w/columns, h, updateDelay, transitionDelay);
+                $.getJSON( "/monitors", function( data ) {
+                    jQuery.each(data.monitors.reverse(), function(index, value) {
+                        displayGraph(index, value.id, value.name, value.value_label, value.value_unit, true, w/columns, h, updateDelay, transitionDelay);
                     });
                 });
             });

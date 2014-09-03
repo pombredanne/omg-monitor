@@ -12,13 +12,15 @@ import (
     "time"
 )
 
-type Checks struct {
-    Checks []CheckType `json:"checks"`
+type Monitors struct {
+    Monitors []MonitorType `json:"monitors"`
 }
 
-type CheckType struct {
-    ID int64 `json:"id"`
+type MonitorType struct {
+    ID string `json:"id"`
     Name string `json:"name"`
+    ValueLabel string `json:"value_label"`
+    ValueUnit string `json:"value_unit"`
 }
 
 type Results struct {
@@ -27,9 +29,8 @@ type Results struct {
 
 type ResultType struct {
     Time int64 `json:"time"`
-    Status string `json:"status"`
-    Actual int64 `json:"actual"`
-    Predicted int64 `json:"predicted"`
+    Actual float64 `json:"actual"`
+    Predicted float64 `json:"predicted"`
     Anomaly float64 `json:"anomaly"`
     Likelihood float64 `json:"likelihood"`
 }
@@ -52,32 +53,55 @@ var redisPool = redis.NewPool(func() (redis.Conn, error) {
         return c, err
 }, maxConnections)
 
-// Return a JSON with the ids and names of the Pingdom checks
-func getJsonChecks(redisResponse []interface{}) []byte {
+// Return a JSON with the ids, names, value_label and value_unit for all monitors
+func getJsonMonitors(redisResponse []interface{}) []byte {
     conn := redisPool.Get() // Redis connection to get the names for the ids
 
-    checks := make([]CheckType, len(redisResponse))
+    monitors := make([]MonitorType, len(redisResponse))
 
     for k, _ := range redisResponse {
         v := ""
         redisResponse, _ = redis.Scan(redisResponse, &v)
-        id, _ := strconv.ParseInt(v, 10, 64)
+
+        id := v[5:len(v)]
 
         // Get the name corresponding to the id
-        n, err := redis.String(conn.Do("GET", "check:" + v))
+        name, errn := redis.String(conn.Do("GET", "name:" + id))
         for {
-            if err == nil { 
+            if errn == nil { 
                 break; 
                 } else {
-                    log.Printf("Redis error in GET check: %s\n", err)
-                    n, err = redis.String(conn.Do("GET", "check:" + v))
+                    log.Printf("Redis error in GET name: %s\n", errn)
+                    name, errn = redis.String(conn.Do("GET", "name:" + id))
                 }
         }
   
-        checks[k] = CheckType{id, n}
+        // Get the value_label corresponding to the id
+        valueLabel, errvl := redis.String(conn.Do("GET", "value_label:" + id))
+        for {
+            if errvl == nil { 
+                break; 
+                } else {
+                    log.Printf("Redis error in GET value_label: %s\n", errvl)
+                    valueLabel, errvl = redis.String(conn.Do("GET", "value_label:" + id))
+                }
+        }
+
+        // Get the value_unit corresponding to the id
+        valueUnit, errvu := redis.String(conn.Do("GET", "value_unit:" + id))
+        for {
+            if errvu == nil { 
+                break; 
+                } else {
+                    log.Printf("Redis error in GET value_unit: %s\n", errvu)
+                    valueUnit, errvu = redis.String(conn.Do("GET", "value_unit:" + id))
+                }
+        }
+
+        monitors[k] = MonitorType{id, name, valueLabel, valueUnit}
     }
     conn.Close()
-    b,_ := json.MarshalIndent(Checks{checks}, "", "  ")
+    b,_ := json.MarshalIndent(Monitors{monitors}, "", "  ")
     return b
 } 
 
@@ -94,13 +118,12 @@ func getJsonResults(redisResponse []interface{}) []byte {
 
         // Set the fields that will compose the ResultType object
         time, _ := strconv.ParseInt(fields[0], 10, 64)
-        status := fields[1]
-        actual, _ := strconv.ParseInt(fields[2], 10, 64)
-        predicted, _ := strconv.ParseInt(fields[3], 10, 64)
-        anomaly, _ := strconv.ParseFloat(fields[4], 64)
-        likelihood, _ := strconv.ParseFloat(fields[5], 64)
+        actual, _ := strconv.ParseFloat(fields[1], 64)
+        predicted, _ := strconv.ParseFloat(fields[2], 64)
+        anomaly, _ := strconv.ParseFloat(fields[3], 64)
+        likelihood, _ := strconv.ParseFloat(fields[4], 64)
 
-        results[k] = ResultType{time, status, actual, predicted, anomaly, likelihood}
+        results[k] = ResultType{time, actual, predicted, anomaly, likelihood}
     }
 
     b,_ := json.MarshalIndent(Results{results}, "", "  ")
@@ -132,22 +155,22 @@ func main() {
         return string(getJsonResults(reply))
     })
 
-    // Handle the "/checks" API method
-    m.Get("/checks", func(params martini.Params) string {
+    // Handle the "/monitors" API method
+    m.Get("/monitors", func(params martini.Params) string {
         conn := redisPool.Get()
 
-        // Query redis all the available "checks"
-        reply, err := redis.Values(conn.Do("LRANGE", "checks", 0, -1))
+        // Query redis all the available "monitors"
+        reply, err := redis.Values(conn.Do("KEYS", "name:*"))
         for {
             if err == nil { 
                 break; 
                 } else {
-                    log.Printf("Redis error in LRANGE checks: %s\n", err)
-                    reply, err = redis.Values(conn.Do("LRANGE", "checks", 0, -1))
+                    log.Printf("Redis error in KEYS name: %s\n", err)
+                    reply, err = redis.Values(conn.Do("KEYS", "name:*"))
                 }
         }
         conn.Close()
-        return string(getJsonChecks(reply))
+        return string(getJsonMonitors(reply))
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")

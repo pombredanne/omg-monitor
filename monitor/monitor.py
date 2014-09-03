@@ -1,243 +1,154 @@
-#!/usr/bin/env python
-# ----------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2013, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3 as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
-# ----------------------------------------------------------------------
-
-"""A simple client to create a CLA model for Monitor."""
-
-from datetime import datetime
-from collections import deque
-import os
-import sys
+import redis
 import logging
 import logging.handlers
-from time import strftime, gmtime, sleep
-
 from nupic.frameworks.opf.modelfactory import ModelFactory
 from nupic.data.inference_shifter import InferenceShifter
-import model_params_monitor # file containing CLA parameters
-
-import redis
-from utils import pingdom # Pingdom API wrapper
+import base_model_params # file containing CLA parameters
 from utils import anomaly_likelihood
+from time import strftime, sleep
+from datetime import datetime
+import calendar
+import os
+import requests
 
-_TIMEOUT = 30000 # Default response time when status is not 'up' (ms)
-_SECONDS_PER_REQUEST = 60 # Sleep time between requests (in seconds)
-
-# Connect to redis server
-_REDIS_SERVER = redis.Redis("localhost")
-
-# Top logger (for redis). Will use only when stand-alone.
 logger = logging.getLogger(__name__)
 
-# Test the redis server
-try:
-    response = _REDIS_SERVER.client_list()
-except redis.ConnectionError:
-    logger.error("Redis server is down.")
-    sys.exit(0)
+class Monitor(object):
+    """ A NuPIC model that saves results to Redis. """
 
-def moving_average(data):
-    """ Used to eventually smooth input data. Not used now. """
-    return sum(data)/len(data) if len(data) > 0 else 0 
+    def __init__(self, config):
 
-def create_model():
-    """ Create the CLA model """
-    return ModelFactory.create(model_params_monitor.MODEL_PARAMS)
+        # Instantiate NuPIC model
+        model_params = base_model_params.MODEL_PARAMS
+        model_params['modelParams']['sensorParams']['encoders']['value']['resolution'] = config['resolution']
 
-def run(check_id, check_name, username, password, appkey):
-    """ Main loop, responsible for initial and online training """
+        self.model = ModelFactory.create(model_params)
 
-    # Setup logging
-    logger = logging.getLogger(__name__)
-    handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/monitor_%s.log" % check_name,
-                                                   maxBytes=1024*1024,
-                                                   backupCount=4,
-                                                  )
+        self.model.enableInference({'predictedField': 'value'})
+        
+        # The shifter is used to bring the predictions to the actual time frame
+        self.shifter = InferenceShifter()
+        
+        # The anomaly likelihood object
+        self.anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
 
-    formatter = logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s')
-    handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+        # Set stream source
+        self.stream = config['stream']
 
-    # Pingdom instance
-    ping = pingdom.Pingdom(username=username, password=password, appkey=appkey)
+        # Setup class variables
+        self.seconds_per_request = config['seconds_per_request']
+        self.db = redis.Redis("localhost")
 
-    # The shifter is used to bring the predictions to the actual time frame
-    shifter = InferenceShifter()
-    
-    # The anomaly likelihood object
-    anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
+        # Set webhook
+        self.webhook = config.get('webhook', None)
 
-    model = create_model() # Create the CLA model
+        # Set anomaly threshold
+        self.anomaly_threshold = config.get('anomaly_threshold', None)
 
-    model.enableInference({'predictedField': 'responsetime'})
+        # Set likelihood threshold
+        self.likelihood_threshold = config.get('likelihood_threshold', None)
 
-    # Moving average window for response time smoothing (higher means smoother)
-    MAVG_WINDOW = 30
+        # Setup logging
+        self.logger =  logger or logging.getLogger(__name__)
+        handler = logging.handlers.RotatingFileHandler(os.environ['LOG_DIR']+"/monitor_%s.log" % self.stream.name,
+                                                       maxBytes=1024*1024,
+                                                       backupCount=4,
+                                                      )
 
-    # Deque to keep history of response time input for smoothing
-    history = deque([0.0] * MAVG_WINDOW, maxlen=MAVG_WINDOW)
+        handler.setFormatter(logging.Formatter('[%(levelname)s/%(processName)s][%(asctime)s] %(name)s %(message)s'))
+        handler.setLevel(logging.INFO)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
 
-    logger.info("[%s] Getting last 5000 results", check_name)
-    
-    # Get past resuts for check
-    results = deque()
-    i = 0
-    while i < 6:
+        # Write metadata to Redis
         try:
-            pingdomResult = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 1000, 'offset': i*1000})
+            # Save in redis with key = 'results:monitor_id' and value = 'time, status, actual, prediction, anomaly'
+            self.db.set('name:%s' % self.stream.id, self.stream.name)
+            self.db.set('value_label:%s' % self.stream.id, self.stream.value_label)
+            self.db.set('value_unit:%s' % self.stream.id, self.stream.value_unit)
         except Exception:
-            logger.warn("[%s] Could not get Pingdom results.", check_name)
-            continue
-        for result in pingdomResult['results']:
-            results.appendleft(result)
-        i = i + 1
+            self.logger.warn("Could not write results to redis.", exc_info=True)
 
-    servertime = None 
-    for modelInput in results:
-        # If dont' have response time is because it's not up, so set it to a large number
-        if 'responsetime' not in modelInput:
-            modelInput['responsetime'] = _TIMEOUT
+    def train(self):
+        data = self.stream.historic_data()
 
-        history.appendleft(int(modelInput['responsetime']))
-        modelInput['responsetime'] = moving_average(history)
+        for model_input in data:
+            self._update(model_input, False) # Don't post anomalies in training
 
-        servertime  = int(modelInput['time'])
-        modelInput['time'] = datetime.utcfromtimestamp(servertime)
+    def loop(self):
+        while True:
+            data = self.stream.new_data()
 
+            for model_input in data:
+                self._update(model_input, True) # Post anomalies when online
+
+            sleep(self.seconds_per_request)
+
+    def _update(self, model_input, is_to_post):
         # Pass the input to the model
-        result = model.run(modelInput)
+        result = self.model.run(model_input)
+
         # Shift results
-        result = shifter.shift(result)
+        result = self.shifter.shift(result)
+
         # Save multi step predictions 
         inference = result.inferences['multiStepPredictions']
+
         # Take the anomaly_score
         anomaly_score = result.inferences['anomalyScore']
+
         # Compute the Anomaly Likelihood
-        likelihood = anomalyLikelihood.anomalyProbability(
-            modelInput['responsetime'], anomaly_score, modelInput['time'])
-       
-        logger.info("[%s] Processing: %s", check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime)))
-    
+        likelihood = self.anomalyLikelihood.anomalyProbability(model_input['value'], 
+                                                               anomaly_score, 
+                                                               model_input['time'])
+               
+        # Get timestamp from datetime
+        timestamp = calendar.timegm(model_input['time'].timetuple())
+
+        self.logger.info("Processing: %s", strftime("%Y-%m-%d %H:%M:%S", model_input['time'].timetuple()))
+                
+        # Write and send post to webhook
+        if is_to_post and self.webhook is not None:
+            report = {'anomaly_score': anomaly_score, 
+                      'likelihood': likelihood,
+                      'model_input':  model_input}
+            report['triggered_threshold'] = []
+            
+            # Set trigger
+            if self.anomaly_threshold is not None:
+                if anomaly_score > self.anomaly_threshold:
+                    report['triggered_threshold'].append('anomaly_score')
+
+            if self.likelihood_threshold is not None:
+                if likelihood > self.likelihood_threshold:
+                    report['triggered_threshold'].append('likelihood')
+
+            # Post only if one of the triggered_threshold is not empty
+            if report['triggered_threshold'] != []:
+                self._send_post(report)
+
+        # Save results to Redis
         if inference[1]:
             try:
-                # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                _REDIS_SERVER.rpush('results:%d' % check_id, 
-                                    '%s,%s,%d,%d,%.5f,%.5f' % (servertime,
-                                                               modelInput['status'],
-                                                               result.rawInput['responsetime'],
-                                                               result.inferences['multiStepBestPredictions'][1],
-                                                               anomaly_score, 
-                                                               likelihood)
-                                   )
+                # Save in redis with key = 'results:monitor_id' and value = 'time, actual, prediction, anomaly'
+                self.db.rpush('results:%s' % self.stream.id, 
+                              '%s,%.5f,%.5f,%.5f,%.5f' % (timestamp,
+                                                          result.rawInput['value'],
+                                                          result.inferences['multiStepBestPredictions'][1],
+                                                          anomaly_score, 
+                                                          likelihood))
             except Exception:
-                logger.warn("[%s] Could not write results to redis.", check_name)
-                continue
+                self.logger.warn("Could not write results to redis.", exc_info=True)
 
-    logger.info("[%s] Let's start learning online...", check_name)
+    def _send_post(self, report):
+        """ Send HTTP POST notification. """
 
-    # Main loop
-    try:  
-        while True:
-            # Call Pingdom for the last 5 results for check_id
-            try:
-                pingdomResults = ping.method('results/%d/' % check_id, method='GET', parameters={'limit': 5})['results']
-            except Exception:
-                logger.warn("[%s][online] Could not get Pingdom results.", check_name, exc_info=True)
-                sleep(_SECONDS_PER_REQUEST)
-                continue
+        payload = {}
+        payload['sent_at'] = datetime.utcnow().isoformat()
+        payload['report'] = report
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(self.webhook, data=payload, headers=headers)
             
-            # If any result contains new responses (ahead of [servetime]) process it. 
-            # We check the last 5 results, so that we don't many lose data points.
-            for modelInput in [pingdomResults[4], pingdomResults[3], pingdomResults[2], pingdomResults[1], pingdomResults[0]]:
-                if servertime < int(modelInput['time']):
-                    # Update servertime
-                    servertime  = int(modelInput['time'])
-                    modelInput['time'] = datetime.utcfromtimestamp(servertime)
-
-                    # If not have response time is because it's not up, so set it to a large number
-                    if 'responsetime' not in modelInput:
-                        modelInput['responsetime'] = _TIMEOUT
-
-                    history.appendleft(int(modelInput['responsetime']))
-                    modelInput['responsetime'] = moving_average(history)
-
-                    # Pass the input to the model
-                    result = model.run(modelInput)
-                    # Shift results
-                    result = shifter.shift(result)
-                    # Save multi step predictions 
-                    inference = result.inferences['multiStepPredictions']
-                    # Take the anomaly_score
-                    anomaly_score = result.inferences['anomalyScore']
-                    # Compute the Anomaly Likelihood
-                    likelihood = anomalyLikelihood.anomalyProbability(
-                        modelInput['responsetime'], anomaly_score, modelInput['time'])
-                    
-                    logger.info("[%s][online] Processing: %s", check_name, strftime("%Y-%m-%d %H:%M:%S", gmtime(servertime)))
-
-                    if inference[1]:
-                        try:
-                            # Save in redis with key = 'results:check_id' and value = 'time, status, actual, prediction, anomaly'
-                            _REDIS_SERVER.rpush('results:%d' % check_id, 
-                                                '%s,%s,%d,%d,%.5f,%.5f' % (servertime,
-                                                                           modelInput['status'],
-                                                                           result.rawInput['responsetime'],
-                                                                           result.inferences['multiStepBestPredictions'][1],
-                                                                           anomaly_score, 
-                                                                           likelihood)
-                                               )
-                        except Exception:
-                            logger.warn("[%s] Could not write results to redis.", check_name, exc_info=True)
-                            continue
-                    else:
-                        logger.warn("[%s] Don't have inference[1]: %s.", check_name, inference)
-
-            # Wait until next request
-            sleep(_SECONDS_PER_REQUEST)
-    except Exception:
-        logger.warn("[%s] Out of main loop.", check_name, exc_info=True)
-        sys.exit(0)
-
-if __name__ == "__main__":
-    if(len(sys.argv) <= 4):
-        print "Usage: monitor.py [username] [password] [appkey] [CHECK_ID]"
-        sys.exit(0)
-
-    # If 4 arguments passed, set check_id
-    if(len(sys.argv) == 5):
-        username = sys.argv[1]
-        password = sys.argv[2]
-        appkey = sys.argv[3]
-        check_id = int(sys.argv[4])
-        check_name = str(check_id)
-
-    # If 5 argumentw passed, set check_id and check_name
-    if(len(sys.argv) == 6):
-        username = sys.argv[1]
-        password = sys.argv[2]
-        appkey = sys.argv[3]
-        check_id = int(sys.argv[4])
-        check_name = sys.argv[5]
-    
-    # Run the monitor
-    run(check_id, check_name, username, password, appkey)
+        self.logger.info('Anomaly posted with status code %d: %s', 
+                         response.status_code, response.text)

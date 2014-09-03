@@ -2,10 +2,8 @@ FROM cloudwalk/nupic
 
 MAINTAINER Allan Costa <allan@cloudwalk.io>
 
-# Install redis, redis-py and go
+# Install redis  and go
 RUN \
-    pip install redis;\
-
     wget http://go.googlecode.com/files/go1.1.2.linux-amd64.tar.gz;\
     tar -C /usr/local -xzf go1.1.2.linux-amd64.tar.gz;\
     rm go1.1.2.linux-amd64.tar.gz;\
@@ -27,12 +25,18 @@ RUN \
     go get github.com/garyburd/redigo/redis;
 #RUN
 
+# Install Python dependencies (others than NuPIC)
+ADD requirements.txt /home/docker/omg-monitor/requirements.txt
+WORKDIR /home/docker/omg-monitor/
+RUN pip install -r requirements.txt
+
 # Copy omg-monitor directory
-ADD start.py /home/docker/omg-monitor/start.py
 ADD startup.sh /home/docker/omg-monitor/startup.sh
-ADD utils/ /home/docker/omg-monitor/utils
 ADD monitor/ /home/docker/omg-monitor/monitor
 ADD server/ /home/docker/omg-monitor/server
+
+# Install Python dependencies (others than NuPIC)
+RUN pip install -r requirements.txt
 
 # Build Go server's binary
 RUN \
@@ -46,5 +50,6 @@ EXPOSE 5000
 ENV LOG_DIR /var/log/docker/monitor
 
 WORKDIR /home/docker/omg-monitor/
+
 
 ENTRYPOINT ["./startup.sh"]

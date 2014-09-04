@@ -10,6 +10,7 @@ from datetime import datetime
 import calendar
 import os
 import requests
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +37,11 @@ class Monitor(object):
         self.stream = config['stream']
 
         # Setup class variables
+        self.db = redis.Redis('localhost')
         self.seconds_per_request = config['seconds_per_request']
-        self.db = redis.Redis("localhost")
-
-        # Set webhook
-        self.webhook = config.get('webhook', None)
-
-        # Set anomaly threshold
-        self.anomaly_threshold = config.get('anomaly_threshold', None)
-
-        # Set likelihood threshold
-        self.likelihood_threshold = config.get('likelihood_threshold', None)
+        self.webhook = config['webhook']
+        self.anomaly_threshold = config['anomaly_threshold']
+        self.likelihood_threshold = config['likelihood_threshold']
 
         # Setup logging
         self.logger =  logger or logging.getLogger(__name__)
@@ -59,6 +54,12 @@ class Monitor(object):
         handler.setLevel(logging.INFO)
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
+
+        self.logger.info("=== Settings ===")
+        self.logger.info("Webhook: %s", self.webhook)
+        self.logger.info("Anomaly threshold: %.2f", self.anomaly_threshold)
+        self.logger.info("Likelihood: %.2f", self.likelihood_threshold)
+        self.logger.info("Seconds per request: %d", self.seconds_per_request)
 
         # Write metadata to Redis
         try:
@@ -111,7 +112,8 @@ class Monitor(object):
         if is_to_post and self.webhook is not None:
             report = {'anomaly_score': anomaly_score, 
                       'likelihood': likelihood,
-                      'model_input':  model_input}
+                      'model_input': {'time': model_input['time'].isoformat(),
+                                      'value': model_input['value']}}
             report['triggered_threshold'] = []
             
             # Set trigger
@@ -146,9 +148,16 @@ class Monitor(object):
         payload = {}
         payload['sent_at'] = datetime.utcnow().isoformat()
         payload['report'] = report
+        payload['monitor'] = self.stream.name
+        payload['source'] = type(self.stream).__name__
+        payload['metric'] = self.stream.value_label
 
         headers = {'Content-Type': 'application/json'}
-        response = requests.post(self.webhook, data=payload, headers=headers)
-            
-        self.logger.info('Anomaly posted with status code %d: %s', 
-                         response.status_code, response.text)
+        try:
+            response = requests.post(self.webhook, data=json.dumps(payload), headers=headers)
+        except Exception:
+            self.logger.warn('Failed to post anomaly.', exc_info=True)
+            return
+
+        self.logger.info('Anomaly posted with status code %d.', response.status_code)
+        return

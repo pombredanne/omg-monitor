@@ -1,13 +1,16 @@
 # Stream configurations
 stream: 
   # Which stream to use
-  source: pingdom
+  source: libratometrics
 
-# Pingdom credentials
+  # Which metric to use
+  # Can be, in principle, any Librato metric
+  metric: AWS.EC2.CPUUTILIZATION
+
+# Librato credentials
 credentials:
     username: USERNAME
-    password: PASSWORD
-    appkey: APPKEY
+    token: TOKEN
 
 # Monitors parameters
 parameters:
@@ -15,7 +18,7 @@ parameters:
     encoder_resolution: 25
 
     # How many points to use for data smoothing via moving average
-    moving_average_window: 30
+    moving_average_window: 5
 
     # Time sleep between requests when it's in online learning
     seconds_per_request: 60
@@ -29,9 +32,9 @@ parameters:
 #
 #{
 #    "sent_at": "2014-09-04T14:42:18.560047",
-#    "monitor": "check_name",
-#    "source": "PingdomStream",
-#    "metric": "Response time",
+#    "monitor": "instance_id",
+#    "source": "LibratometricsStream",
+#    "metric": "AWS.EC2.CPUUTILIZATION",
 #    "report": {
 #        "anomaly_score": 1,
 #        "likelihood": 0.841344746,
@@ -50,5 +53,5 @@ parameters:
 # It can contain anomaly_score or likelihhod or both.
 webhook: http://localhost/listening 
 
-# [Optional] A list with checks to monitor. If not supplied, we run everything.
-monitors: [123456, 875642]
+# [Optional] A list with instances names to monitor. If not supplied, we run everything.
+monitors: [cw.ajsujasdjisad, cw.asdsdsadasdasd]

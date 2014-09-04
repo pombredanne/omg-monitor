@@ -35,6 +35,9 @@ def validate(config):
     keys = config.keys()
     if 'stream' not in keys:
         message = message + 'Stream not specfied.\n'
+    else:
+        if 'source' not in config['stream'].keys():
+            message = message + 'Stream source not specfied.\n'
     
     if 'credentials' not in keys:
         message = message + 'Credentials not specfied.\n'
@@ -108,7 +111,7 @@ if __name__ == "__main__":
         logger.info('Configuration file validated.')
 
         # Get stream type and set StreamClass from it
-        stream_type= config['stream']
+        stream_type= config['stream']['source']
 
         stream_module = importlib.import_module("streams.%s" % stream_type)
         StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
@@ -118,9 +121,13 @@ if __name__ == "__main__":
         for name, value in config['credentials'].items():
             credentials[name] = value
 
+        # Set metric
+        metric = config['stream'].get('metric', None)
+
         # Get all streams available for StreamClass
+        data = {'credentials': credentials, 'metric': metric}
         try:
-            streams = StreamClass.available_streams(credentials)
+            streams = StreamClass.available_streams(data)
         except Exception, e:
             logger.error('Could not connect to stream.', exc_info=True)
             sys.exit(0)
@@ -129,11 +136,14 @@ if __name__ == "__main__":
         monitor_config = {'resolution': int(config['parameters']['encoder_resolution']),
                           'seconds_per_request': int(config['parameters']['seconds_per_request']),
                           'webhook': config.get('webhook', None),
-                          'anomaly_threshold': config.get('anomaly_threshold', None),
-                          'likelihood_threshold': config.get('likelihood_threshold', None)}
+                          'anomaly_threshold': config['parameters'].get('anomaly_threshold', 2.0),
+                          'likelihood_threshold': config['parameters'].get('likelihood_threshold', 2.0)}
+
+        logger.info("Monitor configuration: %s", monitor_config)
 
         # Get other stream parameters
         moving_average_window = int(config['parameters']['moving_average_window'])
+        stream_metric = config['stream'].get('metric', None)
 
         # If don't have specfied monitors, run everything!
         monitors_ids = config.get('monitors', None)
@@ -148,6 +158,7 @@ if __name__ == "__main__":
                 # Configuration to pass to stream class
                 stream_config = {'id': stream_id, 
                                  'name': stream_name,
+                                 'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
                 
@@ -172,6 +183,7 @@ if __name__ == "__main__":
                 # Configuration to pass to stream class
                 stream_config = {'id': stream_id, 
                                  'name': stream_name,
+                                 'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
                 

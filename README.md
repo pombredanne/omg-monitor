@@ -12,7 +12,7 @@ Currently we support the following streams:
 
 Here is a simplified flowchart of the project:
 
-![flowchart](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/new-omg-monitor.svg)
+![flowchart](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/new-omg-monitor.svg)
 
 ## Streams
 
@@ -35,37 +35,8 @@ Configurations files are similar in many aspects, the main difference being the 
 
 An important point is in regard with the `monitors` section, which may be ommited for any configuration file, in which case it will start monitors for every stream availabe of that type. For example, for Pingdom, it will start a monitor for each check found under the given credentials.
 
-#### Pingdom
+We provide templates files for Pingdom and Librato in [monitor/config_templates/].
 
-```yaml
-stream: pingdom
-
-credentials:
-    username: USERNAME
-    password: PASSWORD
-    appkey: APPKEY
-
-parameters:
-    moving_average_window: 30
-    encoder_resolution: 25
-
-monitors: [123456, 875642]
-```
-
-#### Librato AWS CPU
-
-```yaml
-stream: libratocpu
-
-credentials:
-    username: USERNAME
-    token: TOKEN
-
-parameters:
-    moving_average_window: 5
-    encoder_resolution: 25
-
-monitors: [cw.ajsujasdjisad, cw.asdsdsadasdasd]
 ```
 
 ## Output
@@ -83,7 +54,7 @@ It is very simplistic:
 
 * To get the monitors running:
 ```
-/monitors
+GET /monitors
 ```
 The JSON list returned is of the form:
 ```json
@@ -119,7 +90,7 @@ The JSON list returned is of the form:
 
 * To get the last `[N]` results for `[ID]`:
 ```
-/results/[ID]?limit=[N]
+GET /results/[ID]?limit=[N]
 ```
   The resulting JSON string has the following fields:
   * actual: actual value at the given time instant.
@@ -217,7 +188,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [justGage]:http://justgage.com/
 [python-restful-pingdom]:https://github.com/drcraig/python-restful-pingdom
 [allanino/nupic]:https://github.com/allanino/docker-nupic
-
+[monitor/config_templates/]:monitor/config_templates/
 [Dockerfile]:https://github.com/allanino/omg-monitor/blob/master/Dockerfile
 [monitor/run_monitor.py]:https://github.com/allanino/omg-monitor/blob/master/monitor/run_monitor.py
 [startup.sh]:https://github.com/allanino/omg-monitor/blob/master/startup.sh

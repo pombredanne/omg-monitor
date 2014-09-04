@@ -149,11 +149,11 @@ Note that our [Dockerfile] uses the [cloudwalk/nupic] image, as that image alrea
 ## Screenshots
 
 
-![gauge](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/gauge.png)
+![gauge](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/gauge.png)
 
-![anomaly](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/anomaly.png)
+![anomaly](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/anomaly.png)
 
-![likelihood](https://rawgithub.com/cloudwalkio/omg-monitor/images/images/likelihood.png)
+![likelihood](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/likelihood.png)
 
 License
 -------

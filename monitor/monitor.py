@@ -150,7 +150,7 @@ class Monitor(object):
         payload['report'] = report
         payload['monitor'] = self.stream.name
         payload['source'] = type(self.stream).__name__
-        payload['metric'] = self.stream.metric
+        payload['metric'] = self.stream.value_label
 
         headers = {'Content-Type': 'application/json'}
         try:

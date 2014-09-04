@@ -115,14 +115,14 @@ class PingdomStream(BaseStream):
         return new_data
 
     @classmethod
-    def available_streams(cls, credentials):
+    def available_streams(cls, data):
         """ Return a list with available streams for the class implementing this. Should return a list : 
                 [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
         """
         # Set Pingdom object
-        ping = pingdom.Pingdom(username=credentials['username'], 
-                               password=credentials['password'], 
-                               appkey=credentials['appkey'])
+        ping = pingdom.Pingdom(username=data['credentials']['username'], 
+                               password=data['credentials']['password'], 
+                               appkey=data['credentials']['appkey'])
         checks = ping.method('checks')
         result = []
         for check in checks['checks']:

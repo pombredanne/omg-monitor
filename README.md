@@ -37,8 +37,6 @@ An important point is in regard with the `monitors` section, which may be ommite
 
 We provide templates files for Pingdom and Librato in [monitor/config_templates/].
 
-```
-
 ## Output
 
 Each monitor's NuPIC model calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[ID]"`.

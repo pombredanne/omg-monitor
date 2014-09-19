@@ -26,10 +26,10 @@ class Monitor(object):
         self.model = ModelFactory.create(model_params)
 
         self.model.enableInference({'predictedField': 'value'})
-        
+
         # The shifter is used to bring the predictions to the actual time frame
         self.shifter = InferenceShifter()
-        
+
         # The anomaly likelihood object
         self.anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
 
@@ -92,30 +92,30 @@ class Monitor(object):
         # Shift results
         result = self.shifter.shift(result)
 
-        # Save multi step predictions 
+        # Save multi step predictions
         inference = result.inferences['multiStepPredictions']
 
         # Take the anomaly_score
         anomaly_score = result.inferences['anomalyScore']
 
         # Compute the Anomaly Likelihood
-        likelihood = self.anomalyLikelihood.anomalyProbability(model_input['value'], 
-                                                               anomaly_score, 
+        likelihood = self.anomalyLikelihood.anomalyProbability(model_input['value'],
+                                                               anomaly_score,
                                                                model_input['time'])
-               
+
         # Get timestamp from datetime
         timestamp = calendar.timegm(model_input['time'].timetuple())
 
         self.logger.info("Processing: %s", strftime("%Y-%m-%d %H:%M:%S", model_input['time'].timetuple()))
-                
+
         # Write and send post to webhook
         if is_to_post and self.webhook is not None:
-            report = {'anomaly_score': anomaly_score, 
+            report = {'anomaly_score': anomaly_score,
                       'likelihood': likelihood,
                       'model_input': {'time': model_input['time'].isoformat(),
                                       'value': model_input['value']}}
             report['triggered_threshold'] = []
-            
+
             # Set trigger
             if self.anomaly_threshold is not None:
                 if anomaly_score > self.anomaly_threshold:
@@ -133,14 +133,29 @@ class Monitor(object):
         if inference[1]:
             try:
                 # Save in redis with key = 'results:monitor_id' and value = 'time, actual, prediction, anomaly'
-                self.db.rpush('results:%s' % self.stream.id, 
+                self.db.rpush('results:%s' % self.stream.id,
                               '%s,%.5f,%.5f,%.5f,%.5f' % (timestamp,
                                                           result.rawInput['value'],
                                                           result.inferences['multiStepBestPredictions'][1],
-                                                          anomaly_score, 
+                                                          anomaly_score,
                                                           likelihood))
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)
+
+        anomalous = False
+        if self.anomaly_threshold is not None:
+            if anomaly_score > self.anomaly_threshold:
+              anomalous = True
+        if self.likelihood_threshold is not None:
+            if likelihood > self.likelihood_threshold:
+              anomalous = True
+        if anomalous:
+            return {'anomaly' : True,
+                   'anomaly_score': anomaly_score,
+                   'likelihood': likelihood}
+        else:
+            return {'anomaly' : False}
+
 
     def _send_post(self, report):
         """ Send HTTP POST notification. """

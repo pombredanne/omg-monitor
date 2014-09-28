@@ -149,13 +149,7 @@ class Monitor(object):
         if self.likelihood_threshold is not None:
             if likelihood > self.likelihood_threshold:
               anomalous = True
-        if anomalous:
-            return {'anomaly' : True,
-                   'anomaly_score': anomaly_score,
-                   'likelihood': likelihood}
-        else:
-            return {'anomaly' : False}
-
+        return anomalous
 
     def _send_post(self, report):
         """ Send HTTP POST notification. """

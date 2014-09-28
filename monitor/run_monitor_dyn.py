@@ -42,15 +42,17 @@ class Dynamic():
 
     @property
     def value_label(self):
-        return "things"
+        return self.label
 
     @property
     def value_unit(self):
-        return "something"
+        return self.unit
 
     def __init__(self, config):
         self.id = config['id']
         self.name = config['name']
+        self.unit = config['unit']
+        self.label = config['label']
 
 
 
@@ -64,27 +66,15 @@ def new_monitor(check_id):
                       'webhook': 'http://localhost/listening',
                       'likelihood_threshold': 0.9,
                       'anomaly_threshold': 0.9}
-
     logger.info("Monitor configuration: %s", monitor_config)
 
-    # Get other stream paramete rs
-    moving_average_window = 30
-    stream_metric = 'can be any string - eg thing being tracked - eg CPU'
-    stream_name = 'any stream name - eg librato'
-
     stream_config = {'id': check_id,
-                     'name': stream_name,
-                     'metric': stream_metric,
-                     'moving_average_window': moving_average_window}
-
+                     'name': 'any stream name - eg librato',
+                     'unit': "UNIT",
+                     'label' : "LABEL"}
 
     # Instantiate monitor
     logger.info("Instantiating monitor: %s", stream_config['name'])
-
-    #stream_type = "dynamic"
-    #stream_module = importlib.import_module("streams.%s" % stream_type)
-    #StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
-
 
     # Instantiate stream
     stream = Dynamic(stream_config)
@@ -122,8 +112,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         req = json.loads(postVars)
         monitor = get_monitor(req['check_id'])
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value']}
-        result = monitor._update(model_input, True)
-        if result['anomaly']:
+        if monitor._update(model_input, True):
           res = "CRITICAL"
         else:
           res = "OK"

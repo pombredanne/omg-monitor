@@ -37,6 +37,12 @@ def get_monitor(check_id):
       current_monitors[check_id] = new_monitor(check_id)
     return current_monitors[check_id]
 
+def remove_monitor(check_id):
+    mon = current_monitors[check_id]
+    mon.delete()
+    del current_monitors[check_id]
+
+
 class Dynamic():
     """ Class to provide a stream of data to NuPIC. """
 
@@ -120,6 +126,17 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_header("Content-type", "application/json")
         s.end_headers()
         s.wfile.write('{"result": "%s"}' % res)
+    def do_DELETE(s):
+        varLen = int(s.headers['Content-Length'])
+        postVars = s.rfile.read(varLen)
+        req = json.loads(postVars)
+        check_id = req['check_id']
+        remove_monitor(check_id)
+        s.send_response(200)
+        s.send_header("Content-type", "application/json")
+        s.end_headers()
+        s.wfile.write('{"result": "OK"}')
+
 
 
 

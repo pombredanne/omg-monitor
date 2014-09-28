@@ -151,6 +151,12 @@ class Monitor(object):
               anomalous = True
         return anomalous
 
+    def delete(self):
+      self.db.delete("results:%s" % self.stream.id)
+      self.db.delete('name:%s' % self.stream.id)
+      self.db.delete('value_label:%s' % self.stream.id)
+      self.db.delete('value_unit:%s' % self.stream.id)
+
     def _send_post(self, report):
         """ Send HTTP POST notification. """
 

@@ -39,7 +39,7 @@ class Monitor(object):
         # Setup class variables
         self.db = redis.Redis('localhost')
         self.seconds_per_request = config['seconds_per_request']
-        self.webhook = config['webhook']
+        self.webhook = config.get('webhook', None)
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
 
@@ -152,6 +152,8 @@ class Monitor(object):
         return anomalous
 
     def delete(self):
+      """ Remove this monitor from redis """
+
       self.db.delete("results:%s" % self.stream.id)
       self.db.delete('name:%s' % self.stream.id)
       self.db.delete('value_label:%s' % self.stream.id)

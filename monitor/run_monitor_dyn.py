@@ -26,18 +26,24 @@ handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+# This will listen for pushed data
+# If there is already a check monitor setup - it will use it and add data
+# ohterwise it will create a new monitor/model
+
+
+# the current configured monitors - each one has a chunk of CLA memory
 current_monitors = {}
 
-# listen for web requests - when one hits - check name in current.
-# If there - pull out the WebMonitor and call update() - check response...
-# If not - create new WebMonitor
+def get_monitor(check_id, config):
+    """ get or create a new monitor with optional config """
 
-def get_monitor(check_id):
     if not check_id in current_monitors:
-      current_monitors[check_id] = new_monitor(check_id)
+      current_monitors[check_id] = new_monitor(check_id, config)
     return current_monitors[check_id]
 
 def remove_monitor(check_id):
+    """ save some memory by clearing monitor - stopping nupic as well as redis storage """
+
     mon = current_monitors[check_id]
     mon.delete()
     del current_monitors[check_id]
@@ -63,21 +69,25 @@ class Dynamic():
 
 
 
-def new_monitor(check_id):
+def new_monitor(check_id, config):
 
     # default config for any new checks
-    # Get configurations to pass to monitor class
+    # overridable by the first input to this check stream
     monitor_config = {'resolution': 2,
                       'seconds_per_request': 60,
-                      'webhook': 'http://localhost/listening',
+                      #'webhook': 'http://localhost/listening',
                       'likelihood_threshold': 0.9,
                       'anomaly_threshold': 0.9}
+    monitor_config.update(config)
+
     logger.info("Monitor configuration: %s", monitor_config)
 
     stream_config = {'id': check_id,
-                     'name': 'any stream name - eg librato',
-                     'unit': "UNIT",
-                     'label' : "LABEL"}
+                     'name': 'unknown_stream_name',
+                     'unit': "unknown_unit",
+                     'label' : "unknown_label"}
+    stream_config.update(config)
+
 
     # Instantiate monitor
     logger.info("Instantiating monitor: %s", stream_config['name'])
@@ -96,6 +106,7 @@ def new_monitor(check_id):
 
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """ This is the http entrypoint for json data - streams created on the fly """
     def do_GET(s):
         s.send_response(200)
         s.send_header("Content-type", "text/html")
@@ -116,7 +127,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
         req = json.loads(postVars)
-        monitor = get_monitor(req['check_id'])
+        monitor = get_monitor(req['check_id'], req.get('config', {}))
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value']}
         if monitor._update(model_input, True):
           res = "CRITICAL"

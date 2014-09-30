@@ -75,7 +75,7 @@ def new_monitor(check_id, config):
     # overridable by the first input to this check stream
     monitor_config = {'resolution': 2,
                       'seconds_per_request': 60,
-                      #'webhook': 'http://localhost/listening',
+                      'webhook': None,
                       'likelihood_threshold': 0.9,
                       'anomaly_threshold': 0.9}
     monitor_config.update(config)

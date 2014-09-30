@@ -39,7 +39,7 @@ class Monitor(object):
         # Setup class variables
         self.db = redis.Redis('localhost')
         self.seconds_per_request = config['seconds_per_request']
-        self.webhook = config.get('webhook', None)
+        self.webhook = config['webhook']
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
 

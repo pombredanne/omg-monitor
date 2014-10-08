@@ -137,7 +137,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.wfile.write('{"result": "OK"}')
 
 if __name__ == "__main__":
-  PORT=8080
-  httpd = SocketServer.TCPServer(("", PORT), MyHandler)
-  print "serving at port", PORT
-  httpd.serve_forever()
+    PORT=8080
+    httpd = SocketServer.TCPServer(("", PORT), MyHandler)
+    print "serving at port", PORT
+    httpd.serve_forever()
+    

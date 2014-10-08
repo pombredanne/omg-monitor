@@ -112,7 +112,7 @@ See the session [Screenshots](#screenshots) for some examples.
 
 With [Docker] installed, do:
 ```
-sudo docker run -d -p -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILES/ [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
+sudo docker run -d -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILES/ -p [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
 ```
 
 As we must pass some configuration files to the container, we mount the host volume containing those files inside the container, passing the containers absolute path for the configuration files as an argument to the container.

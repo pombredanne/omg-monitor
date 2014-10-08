@@ -8,7 +8,7 @@ This program uses [NuPIC] to catch anomalies in streams of data. It runs as a [D
 
 Currently we support the following streams:
 * [Pingdom] response times
-* [Librato] AWS CPU utilization
+* [Librato] Any AWS EC2 metric (possibly any arbitrary metric will work)
 
 Here is a simplified flowchart of the project:
 
@@ -16,18 +16,19 @@ Here is a simplified flowchart of the project:
 
 ## Streams
 
-A stream, basically, implements an abstract Python class with methods to gather historical data and real-time data. Those methods should return lists of pairs contained in dictionaries, like that: `[{'value': 123, 'time': datetime(...)}, {'value': 122, 'time': datetime(...)}]`. The `value` field is feed into NuPIC for anomaly detection
+A stream, basically, implements an abstract Python class with methods to gather historical data and real-time data. Those methods should return lists of pairs contained in dictionaries, like that: `[{'value': 123, 'time': datetime(...)}, {'value': 122, 'time': datetime(...)}]`. The `value` field is feed into NuPIC for anomaly detection.
 
-For our current streams, we have the following values:
+As example, we can have the following values:
 
 * Pingdom: Response time in ms.
-* Librato: AWS CPU utilization in %.
+* Librato: AWS.EC2.CPUUtilization in %.
 
 ## Monitor
 
 A monitor is composed by a stream and a NuPIC model that fed into that stream.
 
-The script `monitor/run_monitor.py` reads a configuration YAML file and starts batches of monitors according to the configuration
+The script `monitor/run_monitor.py` reads a configuration YAML file and starts batches of monitors according to the configuration.
+
 
 ### Configuration files
 

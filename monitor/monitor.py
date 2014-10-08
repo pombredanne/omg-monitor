@@ -142,7 +142,7 @@ class Monitor(object):
                 max_items = 10000
                 ln = self.db.llen('results:%s' % self.stream.id)
                 if ln > max_items:
-                  self.db.ltrim('results:%s' % self.stream.id, ln - max_items, ln)
+                    self.db.ltrim('results:%s' % self.stream.id, ln - max_items, ln)
 
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)
@@ -150,19 +150,19 @@ class Monitor(object):
         anomalous = False
         if self.anomaly_threshold is not None:
             if anomaly_score > self.anomaly_threshold:
-              anomalous = True
+                anomalous = True
         if self.likelihood_threshold is not None:
             if likelihood > self.likelihood_threshold:
-              anomalous = True
+                anomalous = True
         return anomalous
 
     def delete(self):
-      """ Remove this monitor from redis """
+        """ Remove this monitor from redis """
 
-      self.db.delete("results:%s" % self.stream.id)
-      self.db.delete('name:%s' % self.stream.id)
-      self.db.delete('value_label:%s' % self.stream.id)
-      self.db.delete('value_unit:%s' % self.stream.id)
+        self.db.delete("results:%s" % self.stream.id)
+        self.db.delete('name:%s' % self.stream.id)
+        self.db.delete('value_label:%s' % self.stream.id)
+        self.db.delete('value_unit:%s' % self.stream.id)
 
     def _send_post(self, report):
         """ Send HTTP POST notification. """

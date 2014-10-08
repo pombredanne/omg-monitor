@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-import sys
 import os
 from monitor import Monitor
 import logging
 import logging.handlers
-import yaml
-import importlib
-import SimpleHTTPServer
 import SocketServer
 import BaseHTTPServer
 import json
@@ -37,8 +33,8 @@ current_monitors = {}
 def get_monitor(check_id, config):
     """ get or create a new monitor with optional config """
 
-    if not check_id in current_monitors:
-      current_monitors[check_id] = new_monitor(check_id, config)
+    if check_id not in current_monitors:
+        current_monitors[check_id] = new_monitor(check_id, config)
     return current_monitors[check_id]
 
 def remove_monitor(check_id):
@@ -47,7 +43,6 @@ def remove_monitor(check_id):
     mon = current_monitors[check_id]
     mon.delete()
     del current_monitors[check_id]
-
 
 class Dynamic():
     """ Class to provide a stream of data to NuPIC. """
@@ -65,9 +60,6 @@ class Dynamic():
         self.name = config['name']
         self.unit = config['unit']
         self.label = config['label']
-
-
-
 
 def new_monitor(check_id, config):
 
@@ -101,10 +93,6 @@ def new_monitor(check_id, config):
     # Instantiate monitor
     return Monitor(monitor_config)
 
-
-
-
-
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """ This is the http entrypoint for json data - streams created on the fly """
     def do_GET(s):
@@ -130,9 +118,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         monitor = get_monitor(req['check_id'], req.get('config', {}))
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value']}
         if monitor._update(model_input, True):
-          res = "CRITICAL"
+            res = "CRITICAL"
         else:
-          res = "OK"
+            res = "OK"
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
@@ -147,12 +135,6 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_header("Content-type", "application/json")
         s.end_headers()
         s.wfile.write('{"result": "OK"}')
-
-
-
-
-
-
 
 if __name__ == "__main__":
   PORT=8080

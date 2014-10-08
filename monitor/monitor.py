@@ -139,6 +139,11 @@ class Monitor(object):
                                                           result.inferences['multiStepBestPredictions'][1],
                                                           anomaly_score,
                                                           likelihood))
+                max_items = 10000
+                ln = self.db.llen('results:%s' % self.stream.id)
+                if ln > max_items:
+                  self.db.ltrim('results:%s' % self.stream.id, ln - max_items, ln)
+
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)
 

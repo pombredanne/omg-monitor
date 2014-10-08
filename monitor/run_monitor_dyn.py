@@ -44,7 +44,7 @@ def remove_monitor(check_id):
     mon.delete()
     del current_monitors[check_id]
 
-class Dynamic():
+class Dynamic(object):
     """ Class to provide a stream of data to NuPIC. """
 
     @property

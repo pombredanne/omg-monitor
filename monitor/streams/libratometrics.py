@@ -118,8 +118,8 @@ class LibratometricsStream(BaseStream):
         # Get CPU measutements (we use it get the ID of the instances)
         libr = librato.connect(data['credentials']['username'], data['credentials']['token'])
        
-        cpu = libr.get(data['metric'], count=100, resolution=1)
-        instances_list = [i for i in cpu.measurements]
+        metric = libr.get(data['metric'], count=100, resolution=1)
+        instances_list = [i for i in metric.measurements]
 
         result = []
         for id_ in instances_list:

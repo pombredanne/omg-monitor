@@ -7,9 +7,9 @@
 This program uses [NuPIC] to catch anomalies in streams of data. It runs as a [Docker] container, so to use it you just have to run the container with proper configuration files (see [Usage](#usage)).
 
 Currently we support the following streams for input:
-* [Pingdom] fetch response time data from pingdom and learn from it.
-* [Librato] Learn from any AWS EC2 metric (possibly any arbitrary metric will work)
-* [Dynamic] Push in any timeseries data via JSON and HTTP 
+* [Pingdom]: Fetch response time data from pingdom and learn from it.
+* [Librato]: Learn from any AWS EC2 metric (possibly any arbitrary metric will work)
+* Dynamic: Push in any timeseries data via JSON and HTTP 
 
 Here is a simplified flowchart of the project:
 
@@ -51,9 +51,7 @@ As a concrete example, if you start a monitor for a Pingdom check with `id = 123
 
 ## Pushing in data
 
-If you start the container with the parameter ``-p 8080:8080 -e DYNAMIC=true`
-the app will listen on port 8080 for input data. This will create a monitor
-instance as needed - when a new check id comes in. 
+If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in. 
 This allows you to pump in data from any event source at any pace. 
 As this all runs in the one process, this is slightly more memeory efficient. 
 
@@ -77,16 +75,6 @@ If you want to pass in non default options (eg resolution), add a config map:
 most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes. 
 
 In the /examples directory are some helper scripts to test out this feature. 
-
-
-
-
-
-
-
-
-
-
 
 ## API
 

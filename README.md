@@ -6,9 +6,10 @@
 
 This program uses [NuPIC] to catch anomalies in streams of data. It runs as a [Docker] container, so to use it you just have to run the container with proper configuration files (see [Usage](#usage)).
 
-Currently we support the following streams:
-* [Pingdom] response times
-* [Librato] Any AWS EC2 metric (possibly any arbitrary metric will work)
+Currently we support the following streams for input:
+* [Pingdom] fetch response time data from pingdom and learn from it.
+* [Librato] Learn from any AWS EC2 metric (possibly any arbitrary metric will work)
+* [Dynamic] Push in any timeseries data via JSON and HTTP 
 
 Here is a simplified flowchart of the project:
 
@@ -28,6 +29,7 @@ As example, we can have the following values:
 A monitor is composed by a stream and a NuPIC model that fed into that stream.
 
 The script `monitor/run_monitor.py` reads a configuration YAML file and starts batches of monitors according to the configuration.
+`monitor/run_monitor_dyn.py` runs a little http endpoint allowing you to "push" in event data (vs pulling it from other streams).
 
 
 ### Configuration files
@@ -38,12 +40,53 @@ An important point is in regard with the `monitors` section, which may be ommite
 
 We provide templates files for Pingdom and Librato in [monitor/config_templates/].
 
+If you are using the dyanmic http event input - you don't need any config file (as the configuration data comes along with the data you push in).
+
 ## Output
 
 Each monitor's NuPIC model calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[ID]"`.
 It is also saved, for convenience, a name for the monitor in key `"name:[ID]"`, a label for the values being monitored in `"value_label:[ID]"` and a unit in `"value_unit:[ID]"`.
 
 As a concrete example, if you start a monitor for a Pingdom check with `id = 123456`, it will save the keys `value_label:123456 "Response time` and `value_unit:1223456 "ms"`. 
+
+## Pushing in data
+
+If you start the container with the parameter ``-p 8080:8080 -e DYNAMIC=true`
+the app will listen on port 8080 for input data. This will create a monitor
+instance as needed - when a new check id comes in. 
+This allows you to pump in data from any event source at any pace. 
+As this all runs in the one process, this is slightly more memeory efficient. 
+
+### Example:
+
+`make rebuild`
+
+This will have an input endpoint listening on port 8080, to push in data:
+
+```
+curl --data '{"check_id": "check_id_here", "time":EPOCH_TIME, "value":42}' http://docker_host:8080
+```
+The first time it sees that check_id, a monitor instance will be created. 
+The time/value pair is the timeseries that is used as input. 
+
+The response will be a JSON object saying if the check is currently CRITICAL or OK. 
+You can of course use the API below to find out more information. 
+
+If you want to pass in non default options (eg resolution), add a config map: 
+`"config": {"name": "yeah"}` to the data you are inputting. resolution, webhook, anomaly_threshold, likelihood_threshold are the 
+most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes. 
+
+In the /examples directory are some helper scripts to test out this feature. 
+
+
+
+
+
+
+
+
+
+
 
 ## API
 
@@ -195,4 +238,3 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [2]:https://github.com/allanino/omg-monitor/blob/master/server/public/index.html
 [1]:https://github.com/allanino/omg-monitor/blob/master/server/public/gauge.html
 [3]:https://github.com/allanino/omg-monitor/blob/master/server/public/likelihood.html
-

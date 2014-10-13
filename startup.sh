@@ -3,23 +3,24 @@
 # Create logs dir
 mkdir -p $LOG_DIR
 
-# Start redis server
-redis-server > $LOG_DIR/redis.log &
+# Put monitor args on env variable to be accessed by supervisor
+export MONITOR_ARGS=$*
 
 # Start monitors running NuPIC
 if [ -z "$DYNAMIC" ]; then
-	./monitor/run_monitor.py $* 2> $LOG_DIR/processes.log &
+    # If to tail
+    if [ -z "$TAIL" ]; then
+        exec supervisord -c /home/docker/omg-monitor/config/supervisor.conf
+    else
+        supervisord -c /home/docker/omg-monitor/config/supervisor.conf &
+        multitail -Q 2 $LOG_DIR/*
+    fi
 else
-	./monitor/run_monitor_dyn.py $* 2> $LOG_DIR/processes.log &
-fi
-
-
-
-# Start Go server
-cd server
-if [ -z "$TAIL" ]; then
-	exec ./server > $LOG_DIR/martini.log
-else
-	./server > $LOG_DIR/martini.log &
-	tail -F $LOG_DIR/*
+    # If to tail
+    if [ -z "$TAIL" ]; then
+        exec supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf
+    else
+        supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf &
+        multitail -Q 2 $LOG_DIR/*
+    fi
 fi

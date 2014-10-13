@@ -13,7 +13,7 @@ if [ -z "$DYNAMIC" ]; then
         exec supervisord -c /home/docker/omg-monitor/config/supervisor.conf
     else
         supervisord -c /home/docker/omg-monitor/config/supervisor.conf &
-        multitail -Q 2 $LOG_DIR/*
+        multitail -Q 1 $LOG_DIR/*
     fi
 else
     # If to tail
@@ -21,6 +21,6 @@ else
         exec supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf
     else
         supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf &
-        multitail -Q 2 $LOG_DIR/*
+        multitail -Q 1 $LOG_DIR/*
     fi
 fi

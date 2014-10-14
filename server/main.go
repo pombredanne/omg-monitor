@@ -10,7 +10,10 @@ import (
     "strconv"
     "log"
     "time"
+    "flag"
 )
+
+var token = flag.String("token", "", "access_token that must be validated.")
 
 type Monitors struct {
     Monitors []MonitorType `json:"monitors"`
@@ -131,6 +134,7 @@ func getJsonResults(redisResponse []interface{}) []byte {
 }
 
 func main() {
+    flag.Parse()
 
     m := martini.Classic()
 
@@ -156,7 +160,13 @@ func main() {
     })
 
     // Handle the "/monitors" API method
-    m.Get("/monitors", func(params martini.Params) string {
+    m.Get("/monitors", func(params martini.Params, req *http.Request) string {
+        // Get the access token
+        access_token := req.URL.Query().Get("access_token")
+        if access_token != *token {
+            return "Not authorized"
+        }
+
         conn := redisPool.Get()
 
         // Query redis all the available "monitors"
@@ -174,6 +184,7 @@ func main() {
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")
+    fmt.Printf("[martini] Token: %s\n", *token)
     err := http.ListenAndServe("0.0.0.0:5000", m)
     if err != nil {
         fmt.Printf("Error: %s", err)

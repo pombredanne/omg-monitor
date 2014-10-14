@@ -34,13 +34,13 @@ The script `monitor/run_monitor.py` reads a configuration YAML file and starts b
 
 ### Configuration files
 
-Configurations files are similar in many aspects, the main difference being the credentails section, as the need credentials can be different for different streams. You can notice the difference in the following templates.
+Configurations files are similar in many aspects, the main difference being the credentials section, as the need credentials can be different for different streams. You can notice the difference in the following templates.
 
-An important point is in regard with the `monitors` section, which may be ommited for any configuration file, in which case it will start monitors for every stream availabe of that type. For example, for Pingdom, it will start a monitor for each check found under the given credentials.
+An important point is in regard with the `monitors` section, which may be omitted for any configuration file, in which case it will start monitors for every stream available of that type. For example, for Pingdom, it will start a monitor for each check found under the given credentials.
 
 We provide templates files for Pingdom and Librato in [monitor/config_templates/].
 
-If you are using the dyanmic http event input - you don't need any config file (as the configuration data comes along with the data you push in).
+If you are using the dynamic http event input - you don't need any config file (as the configuration data comes along with the data you push in).
 
 ## Output
 
@@ -53,7 +53,7 @@ As a concrete example, if you start a monitor for a Pingdom check with `id = 123
 
 If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in.
 This allows you to pump in data from any event source at any pace.
-As this all runs in the one process, this is slightly more memeory efficient.
+As this all runs in the one process, this is slightly more memory efficient.
 
 ### Example:
 

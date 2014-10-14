@@ -24,8 +24,7 @@ logger.setLevel(logging.INFO)
 
 # This will listen for pushed data
 # If there is already a check monitor setup - it will use it and add data
-# ohterwise it will create a new monitor/model
-
+# otherwise it will create a new monitor/model
 
 # the current configured monitors - each one has a chunk of CLA memory
 current_monitors = {}
@@ -141,4 +140,3 @@ if __name__ == "__main__":
     httpd = SocketServer.TCPServer(("", PORT), MyHandler)
     print "serving at port", PORT
     httpd.serve_forever()
-    

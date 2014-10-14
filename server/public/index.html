@@ -9,24 +9,24 @@
     </head>
 
     <style>
-        html, 
-        body { 
+        html,
+        body {
             font-family: 'Open Sans',  'Arial';
             font-size:12px;
             width: 100%;
             margin: 0;
         }
-        table { 
-            border-collapse: collapse; 
+        table {
+            border-collapse: collapse;
             width: 100%;
         }
-        table tr { 
-            border:1px solid steelblue; 
+        table tr {
+            border:1px solid steelblue;
             width: 100%;
 
         }
-        table td { 
-            border:1px solid steelblue; 
+        table td {
+            border:1px solid steelblue;
             width: 33%;
         }
 
@@ -56,6 +56,12 @@
         var limit = getURLParameter('limit')
         if(limit === null){
             limit = 60
+        }
+
+        // Get URL parameter access_token
+        var access_token = getURLParameter('access_token')
+        if(access_token === null){
+            access_token = ""
         }
 
         // Make synchronous calls
@@ -89,7 +95,7 @@
 
             var y2 = d3.scale.linear()
                 .range([height, 0]);
- 
+
             // Set the scale for each axis
             var xAxis = d3.svg.axis()
                 .scale(x)
@@ -111,7 +117,7 @@
              var data = []
 
             $(document).ready(function(){
-                $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
+                $.getJSON( "/results/" + check_id + "?limit=" + limit + "&access_token=" + access_token, function( dataset ) {
                     data = dataset.results
                 });
             });
@@ -190,18 +196,18 @@
                 .attr("fill", "none");
 
             svg_response.append("text")
-                .attr("x", (width / 2))             
+                .attr("x", (width / 2))
                 .attr("y", 0 - (margin.top / 2))
-                .attr("text-anchor", "middle")  
-                .style("font-size", "16px") 
-                .style("text-decoration", "bold") 
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .style("text-decoration", "bold")
                 .text(check_name);
 
             svg_anomaly.append("g")
                .attr("class", "x axis")
                .attr("transform", "translate(0," + height + ")")
                .call(xAxis)
- 
+
             svg_anomaly.append("g")
                 .attr("class", "y axis 2")
                 .call(yAxis2)
@@ -226,7 +232,7 @@
                 .attr("stroke-width", 1)
                 .attr("fill", "none")
                 .style("stroke-dasharray", ("3, 3"));
-                  
+
             // Put legends (it's not neat, but I'll have to refactor the code to use D3.js feature)
             var legendBox = svg_response.append("rect")
                 .attr("class", "legend")
@@ -289,7 +295,7 @@
 
             focus_anomaly.append("circle")
                 .attr("stroke", "SlateBlue")
-                .attr("r", 3);                      
+                .attr("r", 3);
 
             focus_anomaly.append("text")
                 .attr("x", 9)
@@ -348,7 +354,7 @@
                     .attr("d", lineAnomaly) // apply the new data values
                     .transition() // start a transition to bring the new value into view
                     .ease("linear")
-                    .duration(transitionDelay) 
+                    .duration(transitionDelay)
                     .attr("transform", "translate(" + x(data[0].time) + ")"); // animate a slide to the left back to x(0) pixels to reveal the new value
 
                 svg_anomaly.select(".lineThreshold")
@@ -367,7 +373,7 @@
 
                 svg_response.select(".y.axis").call(yAxis);
             }
-                
+
             function redrawWithoutAnimation() {
                 // static update without animation
                 svg_response.select(".lineAct")
@@ -403,7 +409,7 @@
                     oldtime = new Date(0);
                 }
                 $(document).ready(function(){
-                    $.getJSON( "/results/" + check_id + "?limit=" + limit, function( dataset ) {
+                    $.getJSON( "/results/" + check_id + "?limit=" + limit + "&access_token=" + access_token, function( dataset ) {
                         if(data[0].time.getTime() != parseInt(dataset.results[0].time)*1000)
                             update = true
                         data = dataset.results
@@ -417,7 +423,7 @@
                     d.anomaly = parseFloat(d.anomaly)
                     d.time = new Date(d.time*1000)
                 });
-                    
+
                 // Update the domain
                 x.domain(d3.extent(data, function(d) { return d.time; }));
 
@@ -445,7 +451,7 @@
             var columns = 3;
 
             $(document).ready(function(){
-                $.getJSON( "/monitors", function( data ) {
+                $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
                     jQuery.each(data.monitors.reverse(), function(index, value) {
                         // Add row and column to the table
                         $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
@@ -465,7 +471,7 @@
             // Remove all existing svg elements (they are all inside divs)
             $("div").empty();
             $(document).ready(function(){
-                $.getJSON( "/monitors", function( data ) {
+                $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
                     jQuery.each(data.monitors.reverse(), function(index, value) {
                         displayGraph(index, value.id, value.name, value.value_label, value.value_unit, true, w/columns, h, updateDelay, transitionDelay);
                     });

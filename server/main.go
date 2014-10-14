@@ -10,7 +10,10 @@ import (
     "strconv"
     "log"
     "time"
+    "flag"
 )
+
+var token = flag.String("token", "", "access_token that must be validated.")
 
 type Monitors struct {
     Monitors []MonitorType `json:"monitors"`
@@ -131,11 +134,20 @@ func getJsonResults(redisResponse []interface{}) []byte {
 }
 
 func main() {
+    flag.Parse()
 
     m := martini.Classic()
 
     // Handle the "/results" API method
-    m.Get("/results/:check_id", func(params martini.Params, res http.ResponseWriter, req *http.Request) string {
+    m.Get("/results/:check_id", func(params martini.Params, w http.ResponseWriter, req *http.Request) (int, string) {
+        w.Header().Set("Content-Type", "application/json")
+
+        // Get the access token
+        access_token := req.URL.Query().Get("access_token")
+        if access_token != *token {
+            return http.StatusUnauthorized , "Not authorized"
+        }
+
         conn := redisPool.Get()
 
         // Parse the url to get the query paramenter named "limit" and convert to int
@@ -152,11 +164,19 @@ func main() {
                 }
         }
         conn.Close()
-        return string(getJsonResults(reply))
+        return http.StatusOK, string(getJsonResults(reply))
     })
 
     // Handle the "/monitors" API method
-    m.Get("/monitors", func(params martini.Params) string {
+    m.Get("/monitors", func(params martini.Params, w http.ResponseWriter, req *http.Request) (int, string) {
+        w.Header().Set("Content-Type", "application/json")
+
+        // Get the access token
+        access_token := req.URL.Query().Get("access_token")
+        if access_token != *token {
+            return http.StatusUnauthorized , "Not authorized"
+        }
+
         conn := redisPool.Get()
 
         // Query redis all the available "monitors"
@@ -170,7 +190,7 @@ func main() {
                 }
         }
         conn.Close()
-        return string(getJsonMonitors(reply))
+        return http.StatusOK, string(getJsonMonitors(reply))
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")

@@ -9,7 +9,7 @@ This program uses [NuPIC] to catch anomalies in streams of data. It runs as a [D
 Currently we support the following streams for input:
 * [Pingdom]: Fetch response time data from pingdom and learn from it.
 * [Librato]: Learn from any AWS EC2 metric (possibly any arbitrary metric will work)
-* Dynamic: Push in any timeseries data via JSON and HTTP 
+* Dynamic: Push in any timeseries data via JSON and HTTP
 
 Here is a simplified flowchart of the project:
 
@@ -47,13 +47,13 @@ If you are using the dyanmic http event input - you don't need any config file (
 Each monitor's NuPIC model calculates an anomaly score and an anomaly likelihood for each input, which are stored with some input fields in a [Redis] server. The data stored in Redis are lists of strings of the form `"time,actual,predicted,anomaly,likelihood"` with keys of the form `"results:[ID]"`.
 It is also saved, for convenience, a name for the monitor in key `"name:[ID]"`, a label for the values being monitored in `"value_label:[ID]"` and a unit in `"value_unit:[ID]"`.
 
-As a concrete example, if you start a monitor for a Pingdom check with `id = 123456`, it will save the keys `value_label:123456 "Response time` and `value_unit:1223456 "ms"`. 
+As a concrete example, if you start a monitor for a Pingdom check with `id = 123456`, it will save the keys `value_label:123456 "Response time` and `value_unit:1223456 "ms"`.
 
 ## Pushing in data
 
-If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in. 
-This allows you to pump in data from any event source at any pace. 
-As this all runs in the one process, this is slightly more memeory efficient. 
+If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in.
+This allows you to pump in data from any event source at any pace.
+As this all runs in the one process, this is slightly more memeory efficient.
 
 ### Example:
 
@@ -64,17 +64,17 @@ This will have an input endpoint listening on port 8080, to push in data:
 ```
 curl --data '{"check_id": "check_id_here", "time":EPOCH_TIME, "value":42}' http://docker_host:8080
 ```
-The first time it sees that check_id, a monitor instance will be created. 
-The time/value pair is the timeseries that is used as input. 
+The first time it sees that check_id, a monitor instance will be created.
+The time/value pair is the timeseries that is used as input.
 
-The response will be a JSON object saying if the check is currently CRITICAL or OK. 
-You can of course use the API below to find out more information. 
+The response will be a JSON object saying if the check is currently CRITICAL or OK.
+You can of course use the API below to find out more information.
 
-If you want to pass in non default options (eg resolution), add a config map: 
-`"config": {"name": "yeah"}` to the data you are inputting. resolution, webhook, anomaly_threshold, likelihood_threshold are the 
-most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes. 
+If you want to pass in non default options (eg resolution), add a config map:
+`"config": {"name": "yeah"}` to the data you are inputting. resolution, webhook, anomaly_threshold, likelihood_threshold are the
+most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes.
 
-In the /examples directory are some helper scripts to test out this feature. 
+In the /examples directory are some helper scripts to test out this feature.
 
 ## API
 
@@ -130,13 +130,20 @@ GET /results/[ID]?limit=[N]
   * time: UNIX time when data was originally gathered.
   If no limit is specified it is assumed that `N=0`, so that the API returns all the results for the given `CHECK_ID`.
 
+If we specify the option `-t SERVER_TOKEN` when starting the service, we should pass an `access_token=SERVER_TOKEN` argument to each API's call, otherwise the API will throw an `Not authorized` message. For example:
+```
+GET /monitors?access_token=SERVER_TOKEN
+```
+
+Note you can choose whatever string you like in place of `SERVER_TOKEN`.
+
 ## API Client
 
 The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dinamically plot them. Currently we have three visualizations:
 
 * The [index.html][2] file uses [D3.js] to plot the last hour results with anomalies.
 * The [likelihood.html][3] file uses [D3.js] to plot the last hour results with anomalies likelihoods.
-* The [gauge.html][1] file uses [justGage] to plot the latest anomalies likelihoods as gauge charts. 
+* The [gauge.html][1] file uses [justGage] to plot the latest anomalies likelihoods as gauge charts.
 
 See the session [Screenshots](#screenshots) for some examples.
 
@@ -144,10 +151,12 @@ See the session [Screenshots](#screenshots) for some examples.
 
 With [Docker] installed, do:
 ```
-sudo docker run -d -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILES/ -p [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
+sudo docker run -d -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILES/ -p [PUBLIC_PORT]:5000 cloudwalk/monitor [-t SERVER_TOKEN] CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
 ```
 
 As we must pass some configuration files to the container, we mount the host volume containing those files inside the container, passing the containers absolute path for the configuration files as an argument to the container.
+
+We must pass at least one configuration file when starting the container and we can, optionally, pass a argument `--token SERVER_TOKEN` with a token to be used for access authentication of our API.
 
 Other parameter that we must specify is the  `[PUBLIC_PORT]` used by the Go server.
 
@@ -155,8 +164,8 @@ Other parameter that we must specify is the  `[PUBLIC_PORT]` used by the Go serv
 
 The logs generated by Redis, Martini and the monitors are saved in a directory specified by `LOG_DIR` environment variable, which defaults to `LOG_DIR=/var/log/docker/monitor`. To access the logs from the host, outside de container, we can mount a host directory to LOG_DIR when starting the container, using flag `-v`:
 ```
-sudo docker run -d -v /HOST/PATH/TO/LOG/DIR:/var/log/docker/monitor -p [PUBLIC_PORT]:5000 cloudwalk/monitor CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
-``` 
+sudo docker run -d -v /HOST/PATH/TO/LOG/DIR:/var/log/docker/monitor -p [PUBLIC_PORT]:5000 cloudwalk/monitor [-t SERVER_TOKEN] CONTAINER/PATH/TO/CONFIG/FILES/config1.yaml CONTAINER/PATH/TO/CONFIG/FILES/config2.yaml ...
+```
 
 An alternative is to mount the volume from another container, using the `--volumes-from` flag.
 
@@ -164,7 +173,7 @@ An alternative is to mount the volume from another container, using the `--volum
 
 ### What happens when the container is started?
 
-The Docker container entrypoint is the script [startup.sh], responsible for starting the Redis and Go servers and for running the [monitor/run_monitor.py] script, which will start one monitor instance for each ID in each stream configuration file, each one in a separate thread (running in parallel). 
+The Docker container entrypoint is the script [startup.sh], responsible for starting the Redis and Go servers and for running the [monitor/run_monitor.py] script, which will start one monitor instance for each ID in each stream configuration file, each one in a separate thread (running in parallel).
 
 ### How to build the image?
 

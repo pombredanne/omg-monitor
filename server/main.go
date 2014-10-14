@@ -194,7 +194,6 @@ func main() {
     })
 
     fmt.Printf("[martini] Listening on port 5000\n")
-    fmt.Printf("[martini] Token: %s\n", *token)
     err := http.ListenAndServe("0.0.0.0:5000", m)
     if err != nil {
         fmt.Printf("Error: %s", err)

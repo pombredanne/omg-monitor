@@ -139,7 +139,15 @@ func main() {
     m := martini.Classic()
 
     // Handle the "/results" API method
-    m.Get("/results/:check_id", func(params martini.Params, res http.ResponseWriter, req *http.Request) string {
+    m.Get("/results/:check_id", func(params martini.Params, w http.ResponseWriter, req *http.Request) (int, string) {
+        w.Header().Set("Content-Type", "application/json")
+
+        // Get the access token
+        access_token := req.URL.Query().Get("access_token")
+        if access_token != *token {
+            return http.StatusUnauthorized , "Not authorized"
+        }
+
         conn := redisPool.Get()
 
         // Parse the url to get the query paramenter named "limit" and convert to int
@@ -156,7 +164,7 @@ func main() {
                 }
         }
         conn.Close()
-        return string(getJsonResults(reply))
+        return http.StatusOK, string(getJsonResults(reply))
     })
 
     // Handle the "/monitors" API method

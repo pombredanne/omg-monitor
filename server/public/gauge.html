@@ -4,12 +4,23 @@
   <head>
     <title>Likelihood Gauge</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    
+
     <script src="js/raphael.2.1.0.min.js"></script>
     <script src="js/justgage.1.0.1.min.js"></script>
     <script src="js/jquery-1.11.1.min.js"></script>
 
     <script type="text/javascript">
+
+    function getURLParameter(name) {
+        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+    }
+
+    // Get URL parameter access_token
+    var access_token = getURLParameter('access_token')
+    if(access_token === null){
+        access_token = ""
+    }
+
     jQuery.ajaxSetup({async:false});
 
     // Function to display individuals gauge charts
@@ -18,7 +29,7 @@
       var data = [];
 
       $(document).ready(function(){
-          $.getJSON( "/results/" + check_id + "?limit=1", function( dataset ) {
+          $.getJSON( "/results/" + check_id + "?limit=1&access_token=" + access_token, function( dataset ) {
               data = dataset.results
           });
       });
@@ -32,8 +43,8 @@
       });
 
         var g = new JustGage({
-          id: "g"+id, 
-          value: 0, 
+          id: "g"+id,
+          value: 0,
           min: 0,
           max: 100,
           title: check_name,
@@ -42,7 +53,7 @@
           refreshAnimationTime: 1000
 
         });
-    
+
         setInterval(function() {
           $(document).ready(function(){
               $.getJSON( "/results/" + check_id + "?limit=1", function( dataset ) {
@@ -59,7 +70,7 @@
           });
 
           g.refresh(data[0].anomaly);
-          
+
         }, updateDelay);
     }
 
@@ -73,7 +84,7 @@
         var h = parseInt(0.8*w);
         $("table").empty();
         $(document).ready(function(){
-            $.getJSON( "/monitors", function( data ) {
+            $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
                 jQuery.each(data.monitors.reverse(), function(index, value) {
                     // Add row and column to the table
                     $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
@@ -90,7 +101,7 @@
         //Remove all existing svg elements (they are all inside divs)
         $("div").empty();
         $(document).ready(function(){
-            $.getJSON( "/monitors", function( data ) {
+            $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
                 jQuery.each(data.monitors.reverse(), function(index, value) {
                     displayGraph(index, value.id, value.name, updateDelay);
                 });

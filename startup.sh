@@ -5,7 +5,7 @@ mkdir -p $LOG_DIR
 
 # Put monitor args on env variable to be accessed by supervisor
 export MONITOR_ARGS=$*
-
+export SERVER_TOKEN=""
 # Start monitors running NuPIC
 if [ -z "$DYNAMIC" ]; then
     # If to tail

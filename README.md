@@ -125,21 +125,21 @@ GET /results/[ID]?limit=[N]
   The resulting JSON string has the following fields:
   * actual: actual value at the given time instant.
   * predicted: value prediction for the given time instant.
-  * anomaly: the unlikelihood of the actual result in comparisson with the predicted result.
+  * anomaly: the unlikelihood of the actual result in comparison with the predicted result.
   * likelihood: the likelihood that the last anomaly score follows the historical probability distribution.
   * time: UNIX time when data was originally gathered.
   If no limit is specified it is assumed that `N=0`, so that the API returns all the results for the given `CHECK_ID`.
 
-If we specify the option `-t SERVER_TOKEN` when starting the service, we should pass an `access_token=SERVER_TOKEN` argument to each API's call, otherwise the API will throw an `Not authorized` message. For example:
+If we specify the option `-t SERVER_TOKEN` when starting the service, we should pass an `access_token=SERVER_TOKEN` argument to each API's call, otherwise the API will throw a `Not authorized` message. For example:
 ```
 GET /monitors?access_token=SERVER_TOKEN
 ```
 
-Note you can choose whatever string you like in place of `SERVER_TOKEN`.
+Note you can choose whatever string you like in place of `SERVER_TOKEN` when specifying the `-t` option.
 
 ## API Client
 
-The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dinamically plot them. Currently we have three visualizations:
+The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dynamically plot them. Currently we have three visualizations:
 
 * The [index.html][2] file uses [D3.js] to plot the last hour results with anomalies.
 * The [likelihood.html][3] file uses [D3.js] to plot the last hour results with anomalies likelihoods.
@@ -156,7 +156,7 @@ sudo docker run -d -v /HOST/PATH/TO/CONFIG/FILES/:/CONTAINER/PATH/TO/CONFIG/FILE
 
 As we must pass some configuration files to the container, we mount the host volume containing those files inside the container, passing the containers absolute path for the configuration files as an argument to the container.
 
-We must pass at least one configuration file when starting the container and we can, optionally, pass a argument `--token SERVER_TOKEN` with a token to be used for access authentication of our API.
+We must pass at least one configuration file when starting the container and we can, optionally, pass a argument `-t SERVER_TOKEN` with a token to be used for access authentication of our API.
 
 Other parameter that we must specify is the  `[PUBLIC_PORT]` used by the Go server.
 

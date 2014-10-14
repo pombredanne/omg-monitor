@@ -15,6 +15,9 @@ RUN \
     rm ../redis-2.6.16.tar.gz;
 #RUN
 
+# Install Supervisor
+RUN apt-get install -y supervisor multitail
+
 # Add redis and go to path
 ENV GOPATH /home/docker/go
 ENV PATH /home/docker/redis-2.6.16/src:/usr/local/go/bin:$PATH
@@ -45,6 +48,7 @@ RUN pip install -r requirements.txt
 # Copy omg-monitor directory
 ADD startup.sh /home/docker/omg-monitor/startup.sh
 ADD monitor/ /home/docker/omg-monitor/monitor
+ADD config/ /home/docker/omg-monitor/config
 
 
 EXPOSE 5000

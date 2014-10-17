@@ -4,7 +4,7 @@ import logging.handlers
 from nupic.frameworks.opf.modelfactory import ModelFactory
 from nupic.data.inference_shifter import InferenceShifter
 import base_model_params # file containing CLA parameters
-from utils import anomaly_likelihood
+from nupic.algorithms.anomaly_likelihood import AnomalyLikelihood
 from time import strftime, sleep
 from datetime import datetime
 import calendar
@@ -31,7 +31,7 @@ class Monitor(object):
         self.shifter = InferenceShifter()
 
         # The anomaly likelihood object
-        self.anomalyLikelihood = anomaly_likelihood.AnomalyLikelihood()
+        self.anomalyLikelihood = AnomalyLikelihood()
 
         # Set stream source
         self.stream = config['stream']

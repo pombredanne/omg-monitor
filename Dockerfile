@@ -16,7 +16,7 @@ RUN \
 #RUN
 
 # Install Supervisor
-RUN apt-get install -y supervisor multitail
+RUN apt-get install -y supervisor
 
 # Add redis and go to path
 ENV GOPATH /home/docker/go

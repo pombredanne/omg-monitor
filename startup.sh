@@ -31,21 +31,12 @@ shift $(expr $OPTIND - 1 )
 # Put monitor args on env variable to be accessed by supervisor
 export MONITOR_ARGS=$*
 export SERVER_TOKEN=$SERVER_TOKEN
+
 # Start monitors running NuPIC
 if [ -z "$DYNAMIC" ]; then
-    # If to tail
-    if [ -z "$TAIL" ]; then
-        exec supervisord -c /home/docker/omg-monitor/config/supervisor.conf
-    else
-        supervisord -c /home/docker/omg-monitor/config/supervisor.conf &
-        multitail --mergeall -Q 1 $LOG_DIR/*
-    fi
+    # If not dynamic
+    exec supervisord -c /home/docker/omg-monitor/config/supervisor.conf
 else
-    # If to tail
-    if [ -z "$TAIL" ]; then
-        exec supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf
-    else
-        supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf &
-        multitail --mergeall -Q 1 $LOG_DIR/*
-    fi
+    # If dynamic
+    exec supervisord -c /home/docker/omg-monitor/config/supervisor_dynamic.conf
 fi

@@ -67,14 +67,14 @@ def new_monitor(check_id, config):
     monitor_config = {'resolution': 2,
                       'seconds_per_request': 60,
                       'webhook': None,
-                      'likelihood_threshold': 0.9,
+                      'likelihood_threshold': None,
                       'anomaly_threshold': 0.9}
     monitor_config.update(config)
 
     logger.info("Monitor configuration: %s", monitor_config)
 
     stream_config = {'id': check_id,
-                     'name': 'unknown_stream_name',
+                     'name': check_id,
                      'unit': "unknown_unit",
                      'label' : "unknown_label"}
     stream_config.update(config)

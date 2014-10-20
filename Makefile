@@ -3,7 +3,7 @@ build:
 
 # this runs the app in dynamic monitor mode - listing for input on 8080.
 run:
-	docker run -d -e DYNAMIC=true -e -p 8080:8080 -p 5000:5000 cloudwalk/monitor
+	docker run -e DYNAMIC=true -p 8080:8080 -p 5000:5000 cloudwalk/monitor
 
 rebuild: build run
 

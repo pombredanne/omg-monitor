@@ -5,6 +5,7 @@
       <meta charset="UTF-8">
       <script type="text/javascript" src="/js/d3.v3.min.js" charset="utf-8"></script>
       <script type="text/javascript" src="/js/jquery-1.4.2.min.js" charset="utf-8"></script>
+      <script type="text/javascript" src="/js/dygraph-combined.js" charset="utf-8"></script>
       <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Open+Sans">
     </head>
 
@@ -45,6 +46,38 @@
           fill: none;
           stroke-width: 1.5;
         }
+
+      #div-space {
+          margin: 0 0 0 10%;
+          background: #FFF
+      }
+
+      #div-2 {
+        margin: 0 0 0 10%;
+        background: #FFF
+      }
+      #div-1 {
+        margin: 5% 0 0 10%;
+        background: #FFF
+      }
+      div[id^="div"] .dygraph-label {
+        /* This applies to the title, x-axis label and y-axis label */
+        font-size: 14px;
+      }
+
+        .overlay-bg {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height:100%;
+        width: 100%;
+        cursor: pointer;
+        z-index: 1000; /* high z-index */
+        background: #000; /* fallback */
+        background: rgba(0,0,0,0.75);
+    }
+
     </style>
 
     <script>
@@ -56,18 +89,23 @@
         var limit = getURLParameter('limit')
         if(limit === null){
             limit = 60
-        }
+        };
 
         // Get URL parameter access_token
         var access_token = getURLParameter('access_token')
         if(access_token === null){
             access_token = ""
-        }
+        };
 
         // Make synchronous calls
         jQuery.ajaxSetup({async:false});
 
+        var monitors = [];
+
         function displayGraph(id, check_id, check_name, value_label, value_unit, animate, width, height, updateDelay, transitionDelay) {
+
+            monitors.push({'check_id': check_id, 'check_name': check_name, 'value_label': value_label, 'value_unit': value_unit});
+
             // The dimensions of our plot
             var margin = {top: 45, right: 30, bottom: 22, left: 72},
                 width = width - margin.left - margin.right,
@@ -443,7 +481,103 @@
                     }
             }
             }, updateDelay);
+        };
+
+      // Function using dygraphs to draw a interactive detailed plot
+      function drawDetailed(id){
+        // Get monitor to be draw
+        var monitor = monitors[id];
+
+        // Get data for monitor
+        $(document).ready(function(){
+            $.getJSON( "/results/" + monitor.check_id + "?limit=720&access_token=" + access_token, function( dataset ) {
+                data = dataset.results
+            });
+        });
+
+        // Callbacks to map JSON to arrays recognizable by dygraphs
+        function Json2PredictionArray(d) {
+            return [new Date(d.time*1000), d.actual, d.predicted];
         }
+
+        function Json2AnomalyArray(d) {
+            return [new Date(d.time*1000), d.anomaly, d.likelihood];
+        }
+
+        // Arrays to be passed to dygraphs
+        var pred = data.map(Json2PredictionArray);
+        var anomalies = data.map(Json2AnomalyArray);
+
+        // Code to plot predictions and scores synced
+        var blockRedraw = false;
+        var initialized = false;
+        $('.overlay-bg').show(); // Show overlay
+
+        // Plot predictions
+        var g1_pred = new Dygraph(
+          document.getElementById("div-1"),
+          pred, {
+            title: monitor.check_name,
+            showRangeSelector: true,
+            ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
+            legend: 'always',
+            labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
+            labels: ['Time', 'Actual', 'Predicted'],
+            axisLabelFontSize: 12,
+            drawCallback: function(me, initial) {
+              if (blockRedraw || initial) return;
+              blockRedraw = true;
+              var range = me.xAxisRange();
+              var yrange = me.yAxisRange();
+              for (var j = 0; j < 2; j++) {
+                if (gs[j] == me) continue;
+                gs[j].updateOptions( {
+                  dateWindow: range,
+                  yvalueRange: [0, 1]
+                } );
+              }
+              blockRedraw = false;
+            },
+            highlightCallback: function(e,x,pts,row,seriesName) {
+             gs[1].setSelection(row);
+           }
+          }
+        );
+
+        var g1_anomaly = new Dygraph(
+          document.getElementById("div-2"),
+          anomalies, {
+            ylabel: 'Score',
+            legend: 'always',
+            fillGraph: true,
+            labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(200,200,200,0.65)'},
+            labels: ['Time', 'Anomaly', 'Likelihood'],
+            colors: ['rgb(6,60,210)', 'rgb(80,20,120)'],
+            axisLabelFontSize: 12,
+            valueRange: [0, 1.2],
+            drawCallback: function(me, initial) {
+              if (blockRedraw || initial) return;
+              blockRedraw = true;
+              var range = me.xAxisRange();
+              var yrange = me.yAxisRange();
+              for (var j = 0; j < 2; j++) {
+                if (gs[j] == me) continue;
+                gs[j].updateOptions( {
+                  dateWindow: range
+                } );
+              }
+              blockRedraw = false;
+            },
+            highlightCallback: function(e,x,pts,row,seriesName) {
+             gs[0].setSelection(row);
+           }
+          }
+        )
+
+        gs = [g1_pred, g1_anomaly];
+
+
+      }
     </script>
 
     <script type="text/javascript">
@@ -453,9 +587,9 @@
             $(document).ready(function(){
                 $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
                     jQuery.each(data.monitors.reverse(), function(index, value) {
-                        // Add row and column to the table
+                        // Add row and column to the table (on cell click we call drawDetailed)
                         $("#table").append("<tr id=\"tr" + parseInt(index/columns) + "\"></tr>");
-                        $("#tr" + parseInt(index/columns)).append("<td id=\"td" + index + "\"><div id=\"r" + index + "\" class=\"plot\"></div></td>");
+                        $("#tr" + parseInt(index/columns)).append("<td onclick=\"drawDetailed(" + index + ")\" id=\"td" + index + "\"><div id=\"r" + index + "\" class=\"plot\"></div></td>");
                         $("#td" + index).append("<div id=\"a" + index + "\" class=\"plot\"></div>");
                     });
                 });
@@ -490,8 +624,21 @@
         $(window).resize(function() {
             delay(function(){
                 var win = $(this);
+                $('.overlay-bg').hide(); // Hide overlay
                 createPlots($(this).width());
             }, 500);
+        });
+
+        // Hide overlay when click outside
+        $(document).mouseup(function (e)
+        {
+            var container = $(".overlay-bg");
+
+            if (!container.is(e.target) // if the target of the click isn't the container...
+                && container.has(e.target).length === 0) // ... nor a descendant of the container
+            {
+                container.hide();
+            }
         });
 
         // Create table with divs for the plots
@@ -503,5 +650,15 @@
 
     <body>
         <table id="table"></table>
+
+        <!-- Overlay to call when plotting chart  -->
+        <div class="overlay-bg">
+          <!-- Prediction container  -->
+          <div id="div-1" style="width:75%; height:50%;"></div>
+          <div id="div-space" style="width:75%; height:2%;"></div>
+          <!-- Anomaly container  -->
+          <div id="div-2" style="width:75%; height:25%;">
+          </div>
+        </div>
     </body>
 </html>

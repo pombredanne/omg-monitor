@@ -74,20 +74,6 @@ function drawDetailed(id){
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Actual', 'Predicted'],
       axisLabelFontSize: 12,
-      drawCallback: function(me, initial) {
-        if (blockRedraw || initial) return;
-        blockRedraw = true;
-        var range = me.xAxisRange();
-        var yrange = me.yAxisRange();
-        for (var j = 0; j < 2; j++) {
-          if (gs[j] == me) continue;
-          gs[j].updateOptions( {
-            dateWindow: range,
-            yvalueRange: [0, 1]
-          } );
-        }
-        blockRedraw = false;
-      },
       highlightCallback: function(e,x,pts,row,seriesName) {
        gs[1].setSelection(row);
      }
@@ -121,19 +107,6 @@ function drawDetailed(id){
             Dygraph.endPan(event, g, context);
           }
         }
-      },
-      drawCallback: function(me, initial) {
-        if (blockRedraw || initial) return;
-        blockRedraw = true;
-        var range = me.xAxisRange();
-        var yrange = me.yAxisRange();
-        for (var j = 0; j < 2; j++) {
-          if (gs[j] == me) continue;
-          gs[j].updateOptions( {
-            dateWindow: range
-          } );
-        }
-        blockRedraw = false;
       },
       highlightCallback: function(e,x,pts,row,seriesName) {
        gs[0].setSelection(row);
@@ -180,22 +153,7 @@ function drawSimple(id, width){
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Actual', 'Predicted'],
       axisLabelFontSize: 12,
-      drawCallback: function(me, initial) {
-        if (blockRedraw || initial) return;
-        blockRedraw = true;
-        var range = me.xAxisRange();
-        var yrange = me.yAxisRange();
-        for (var j = 0; j < 2; j++) {
-          if (gs[j] == me) continue;
-          gs[j].updateOptions( {
-            dateWindow: range,
-            yvalueRange: [0, 1]
-          } );
-        }
-        blockRedraw = false;
-      },
       highlightCallback: function(e,x,pts,row,seriesName) {
-        console.log(gs[1])
         gs[1].setSelection(row); // Synchronize both charts
       },
       unhighlightCallback: function(e,x,pts,row,seriesName) {
@@ -231,19 +189,6 @@ function drawSimple(id, width){
           }
         }
       },
-      drawCallback: function(me, initial) {
-        if (blockRedraw || initial) return;
-        blockRedraw = true;
-        var range = me.xAxisRange();
-        var yrange = me.yAxisRange();
-        for (var j = 0; j < 2; j++) {
-          if (gs[j] == me) continue;
-          gs[j].updateOptions( {
-            dateWindow: range
-          } );
-        }
-        blockRedraw = false;
-      },
       highlightCallback: function(e,x,pts,row,seriesName) {
         gs[0].setSelection(row); // Synchronize both charts
       },
@@ -254,6 +199,24 @@ function drawSimple(id, width){
   )
 
   gs = [g1_pred, g1_anomaly];
+
+  // Dynamically update plot
+  window.intervalId = setInterval(function() {
+    // Get data for monitor
+    $(document).ready(function(){
+      $.getJSON( "/results/" + monitor.check_id + "?limit=60&access_token=" + access_token, function( dataset ) {
+            data = dataset.results
+      });
+    });
+
+    pred = data.map(Json2PredictionArray);
+    anomalies = data.map(Json2AnomalyArray);
+
+    blockRedraw = true;
+    g1_pred.updateOptions( { 'file': pred } );
+    g1_anomaly.updateOptions( { 'file': anomalies } );
+    }, 5000);
+
 }
 
 // Create a table with cells in which we'll draw our charts
@@ -275,7 +238,6 @@ function createGraphTable(){
             };
             // Populate monitors array
             jQuery.each(data.monitors.reverse(), function(index, value) {
-                console.log({'check_id': value.id, 'check_name': value.name, 'value_label': value.value_label, 'value_unit': value.value_unit})
                 monitors.push({'check_id': value.id, 'check_name': value.name, 'value_label': value.value_label, 'value_unit': value.value_unit});
             });
         });

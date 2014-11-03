@@ -231,7 +231,7 @@ function drawSimple(id, width){
   window.intervalId = setInterval(function() {
     // Get data for monitor
     $(document).ready(function(){
-      $.getJSON( "/results/" + monitor.check_id + "?limit=5&access_token=" + access_token, function( dataset ) {
+      $.getJSON( "/results/" + monitor.check_id + "?limit=60&access_token=" + access_token, function( dataset ) {
             data = dataset.results
       });
     });

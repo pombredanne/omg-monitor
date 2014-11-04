@@ -167,18 +167,18 @@ class Monitor(object):
     def _send_post(self, report):
         """ Send HTTP POST notification. """
 
-        if "hooks.slack.com" not in http_post_url:
+        if "hooks.slack.com" not in self.webhook:
           payload = {
-            'sent_at' = datetime.utcnow().isoformat()
-            'report' = report
-            'monitor' = self.stream.name
-            'source' = type(self.stream).__name__
-            'metric' = self.stream.value_label
+            'sent_at': datetime.utcnow().isoformat(),
+            'report': report,
+            'monitor': self.stream.name,
+            'source': type(self.stream).__name__,
+            'metric': '%s (%s)' % (self.stream.value_label, self.stream.value_unit)
           }
         else:
           payload = {
             'username': 'omg-monitor',
-            'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/post_icon.png',
+            'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/slack-integration/docs/images/post_icon.png',
             'text':  'An anomaly was detected:',
             'attachments': [
                 {
@@ -196,17 +196,12 @@ class Monitor(object):
                       },
                       {
                         'title': 'Metric',
-                        'value': self.stream.value_label,
+                        'value': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
                         'short': True
                       },
                       {
                         'title': 'Value',
                         'value': report['model_input']['value'],
-                        'short': True
-                      },
-                      {
-                        'title': 'Time',
-                        'value': report['model_input']['time'],
                         'short': True
                       },
                       {
@@ -217,6 +212,11 @@ class Monitor(object):
                       {
                         'title': 'Anomaly Likelihood',
                         'value': report['likelihood'],
+                        'short': True
+                      },
+                      {
+                        'title': 'Time',
+                        'value': report['model_input']['time'],
                         'short': True
                       },
                   ]
@@ -231,5 +231,5 @@ class Monitor(object):
             self.logger.warn('Failed to post anomaly.', exc_info=True)
             return
 
-        self.logger.info('Anomaly posted with status code %d.', response.status_code)
+        self.logger.info('Anomaly posted with status code %d: %s', response.status_code, response.body)
         return

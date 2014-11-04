@@ -192,8 +192,13 @@ Note that our [Dockerfile] uses the [cloudwalk/nupic] image, as that image alrea
 ![anomaly](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/anomaly.png)
 
 ![detailed](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/detailed.png)
-License
--------
+
+
+## Credits
+
+When posting anomalies to Slack, we make use of the icon [Analytics chart on a monitor screen](http://www.flaticon.com/free-icon/analytics-chart-on-a-monitor-screen_35943) made by [Freepik](http://www.freepik.com) from [www.flaticon.com](http://www.flaticon.com) licensed under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/).
+
+## License
 ```
 OMG Monitor
 Copyright (C) 2014 CloudWalk Inc.

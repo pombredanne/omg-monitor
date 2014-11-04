@@ -1,0 +1,81 @@
+@import url('http://fonts.googleapis.com/css?family=Open+Sans');
+
+html,
+body {
+    font-family: 'Open Sans',  'Arial';
+    font-size:12px;
+    width: 100%;
+    margin: 0;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+table tr {
+    border:1px solid steelblue;
+}
+table td {
+    border:1px solid steelblue;
+}
+td:hover {
+    border:2px solid steelblue;
+}
+
+/* Overlay style */
+.overlay-bg {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height:100%;
+  width: 100%;
+  cursor: pointer;
+  z-index: 1000; /* high z-index */
+  background: #000; /* fallback */
+  background: rgba(0,0,0,0.75);
+}
+.overlay-bg .chart-predictions {
+margin: 5% 0 0 12.5%;
+background: #FFF;
+width: 75%;
+height: 50%
+}
+.overlay-bg .chart-anomalies {
+margin: 0 0 0 12.5%;
+background: #FFF;
+width: 75%;
+height: 25%
+}
+.overlay-bg .chart-panel {
+  margin: 0 0 0 12.5%;
+  background: #FFF;
+  width: 75%;
+  height: 2%
+}
+.overlay-bg .chart-predictions .dygraph-label.dygraph-title {
+font-size: 16px;
+}
+
+/* Chart grid style */
+.cell-chart {
+  width: 500px;
+  margin: 4px;
+}
+.cell-chart .chart-predictions {
+background: #FFF;
+height: 150px;
+}
+.cell-chart .chart-anomalies {
+background: #FFF;
+height: 90px;
+}
+.cell-chart .chart-panel {
+  background: #FFF;
+  height: 10px;
+}
+.cell-chart .dygraph-label {
+font-size: 13px;
+}
+.cell-chart .chart-predictions .dygraph-label.dygraph-title {
+font-size: 14px;
+}

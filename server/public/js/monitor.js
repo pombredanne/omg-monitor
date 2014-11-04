@@ -27,6 +27,12 @@ if(columns === null){
     columns = 3
 };
 
+// Get URL parameter with number of points to show when detailing chart
+var limitDetailed = getURLParameter('limit_detailed')
+if(limitDetailed === null){
+    limitDetailed = 1440
+};
+
 // Callbacks to map JSON to arrays recognizable by dygraphs
 function Json2PredictionArray(d) {
     return [new Date(d.time*1000), d.actual, d.predicted];
@@ -43,7 +49,7 @@ function drawDetailed(id){
 
   // Get data for monitor
   $(document).ready(function(){
-      $.getJSON( "/results/" + monitor.check_id + "?limit=1440&access_token=" + access_token, function( dataset ) {
+      $.getJSON( "/results/" + monitor.check_id + "?limit=" + limitDetailed + "&access_token=" + access_token, function( dataset ) {
           data = dataset.results
       });
   });

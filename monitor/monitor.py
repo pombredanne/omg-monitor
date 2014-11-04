@@ -167,12 +167,62 @@ class Monitor(object):
     def _send_post(self, report):
         """ Send HTTP POST notification. """
 
-        payload = {}
-        payload['sent_at'] = datetime.utcnow().isoformat()
-        payload['report'] = report
-        payload['monitor'] = self.stream.name
-        payload['source'] = type(self.stream).__name__
-        payload['metric'] = self.stream.value_label
+        if "hooks.slack.com" not in http_post_url:
+          payload = {
+            'sent_at' = datetime.utcnow().isoformat()
+            'report' = report
+            'monitor' = self.stream.name
+            'source' = type(self.stream).__name__
+            'metric' = self.stream.value_label
+          }
+        else:
+          payload = {
+            'username': 'omg-monitor',
+            'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/post_icon.png',
+            'text':  'An anomaly was detected:',
+            'attachments': [
+                {
+                  'color': '#1C5884',
+                  'fields': [
+                      {
+                        'title': 'Monitor',
+                        'value':  self.stream.name,
+                        'short': True
+                      },
+                      {
+                        'title': 'Source',
+                        'value': type(self.stream).__name__,
+                        'short': True
+                      },
+                      {
+                        'title': 'Metric',
+                        'value': self.stream.value_label,
+                        'short': True
+                      },
+                      {
+                        'title': 'Value',
+                        'value': report['model_input']['value'],
+                        'short': True
+                      },
+                      {
+                        'title': 'Time',
+                        'value': report['model_input']['time'],
+                        'short': True
+                      },
+                      {
+                        'title': 'Anomaly Score',
+                        'value': report['anomaly_score'],
+                        'short': True
+                      },
+                      {
+                        'title': 'Anomaly Likelihood',
+                        'value': report['likelihood'],
+                        'short': True
+                      },
+                  ]
+              }
+            ]
+          }
 
         headers = {'Content-Type': 'application/json'}
         try:

@@ -141,8 +141,7 @@ Note you can choose whatever string you like in place of `SERVER_TOKEN` when spe
 
 The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dynamically plot them. Currently we have three visualizations:
 
-* The [index.html][2] file uses [D3.js] to plot the last hour results with anomalies.
-* The [likelihood.html][3] file uses [D3.js] to plot the last hour results with anomalies likelihoods.
+* The [index.html][2] file uses [dygraphs] to plot the last hour results with anomalies.
 * The [gauge.html][1] file uses [justGage] to plot the latest anomalies likelihoods as gauge charts.
 
 See the session [Screenshots](#screenshots) for some examples.
@@ -192,8 +191,7 @@ Note that our [Dockerfile] uses the [cloudwalk/nupic] image, as that image alrea
 
 ![anomaly](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/anomaly.png)
 
-![likelihood](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/likelihood.png)
-
+![detailed](https://rawgithub.com/cloudwalkio/omg-monitor/master/docs/images/detailed.png)
 License
 -------
 ```
@@ -222,7 +220,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [Redis]:http://redis.io/
 [Martini]:https://github.com/codegangsta/martini
 [Go]:http://golang.org/
-[D3.js]:http://d3js.org/
+[dygraphs]:http://dygraphs.com/
 [jQuery]:http://jquery.com/
 [justGage]:http://justgage.com/
 [python-restful-pingdom]:https://github.com/drcraig/python-restful-pingdom

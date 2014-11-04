@@ -231,5 +231,5 @@ class Monitor(object):
             self.logger.warn('Failed to post anomaly.', exc_info=True)
             return
 
-        self.logger.info('Anomaly posted with status code %d: %s', response.status_code, response.body)
+        self.logger.info('Anomaly posted with status code %d: %s', response.status_code, response.text)
         return

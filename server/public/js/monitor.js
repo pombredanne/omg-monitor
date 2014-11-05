@@ -33,6 +33,9 @@ if(limitDetailed === null){
     limitDetailed = 1440
 };
 
+// Get URL parameter with id to focus on
+var focusId = getURLParameter('id')
+
 // Callbacks to map JSON to arrays recognizable by dygraphs
 function Json2PredictionArray(d) {
     return [new Date(d.time*1000), d.actual, d.predicted];
@@ -43,13 +46,10 @@ function Json2AnomalyArray(d) {
 }
 
 // Function using dygraphs to draw a interactive detailed plot
-function drawDetailed(id){
-  // Get monitor to be draw
-  var monitor = monitors[id];
-
+function drawDetailed(monitor){
   // Get data for monitor
   $(document).ready(function(){
-      $.getJSON( "/results/" + monitor.check_id + "?limit=" + limitDetailed + "&access_token=" + access_token, function( dataset ) {
+      $.getJSON( "/results/" + monitor.id + "?limit=" + limitDetailed + "&access_token=" + access_token, function( dataset ) {
           data = dataset.results
       });
   });
@@ -73,7 +73,7 @@ function drawDetailed(id){
   var g1_pred = new Dygraph(
     document.getElementById("chart-overlay-predictions"),
     pred, {
-      title: monitor.check_name,
+      title: monitor.name,
       showRangeSelector: true,
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       legend: 'always',
@@ -151,13 +151,10 @@ function drawDetailed(id){
 }
 
 // Function using dygraphs to draw a interactive detailed plot
-function drawSimple(id, width){
-  // Get monitor to be draw
-  var monitor = monitors[id];
-
+function drawSimple(monitor, width){
   // Get data for monitor
   $(document).ready(function(){
-      $.getJSON( "/results/" + monitor.check_id + "?limit=60&access_token=" + access_token, function( dataset ) {
+      $.getJSON( "/results/" + monitor.id + "?limit=60&access_token=" + access_token, function( dataset ) {
           data = dataset.results
       });
   });
@@ -170,18 +167,18 @@ function drawSimple(id, width){
   var initialized = false;
 
   // Create HTML elements
-  var div_pred = "<div class='chart-predictions' id='chart-predictions-" + id + "'></div>"
-  var div_panel = "<div class='chart-panel' id='chart-panel-" + id + "'></div>"
-  var div_anomaly = "<div class='chart-anomalies' id='chart-anomalies-" + id + "'></div>"
-  $('#cell-' + id).empty();
-  $('#cell-' + id).append(div_pred, div_panel, div_anomaly)
+  var div_pred = "<div class='chart-predictions' id='chart-predictions-" + monitor.id + "'></div>"
+  var div_panel = "<div class='chart-panel' id='chart-panel-" + monitor.id + "'></div>"
+  var div_anomaly = "<div class='chart-anomalies' id='chart-anomalies-" + monitor.id + "'></div>"
+  $('#' + monitor.id).empty();
+  $('#' + monitor.id).append(div_pred, div_panel, div_anomaly)
 
   // Plot predictions
   var gs = [] // Array with plots for this id
   var g1_pred = new Dygraph(
-    document.getElementById("chart-predictions-" + id),
+    document.getElementById("chart-predictions-" + monitor.id),
     pred, {
-      title: monitor.check_name,
+      title: monitor.name,
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Actual', 'Predicted'],
@@ -196,7 +193,7 @@ function drawSimple(id, width){
   );
 
   var g1_anomaly = new Dygraph(
-    document.getElementById("chart-anomalies-" + id),
+    document.getElementById("chart-anomalies-" + monitor.id),
     anomalies, {
       ylabel: 'Score',
       fillGraph: true,
@@ -237,7 +234,7 @@ function drawSimple(id, width){
   window.intervalId = setInterval(function() {
     // Get data for monitor
     $(document).ready(function(){
-      $.getJSON( "/results/" + monitor.check_id + "?limit=60&access_token=" + access_token, function( dataset ) {
+      $.getJSON( "/results/" + monitor.id + "?limit=60&access_token=" + access_token, function( dataset ) {
             data = dataset.results
       });
     });
@@ -256,37 +253,42 @@ function drawSimple(id, width){
 function createGraphTable(){
     var columns = window.columns;
     var rows = 0;
-    var id = 0;
+    var index = 0;
+    var id = "";
     $(document).ready(function(){
         $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
             rows = parseInt(data.monitors.length/columns) + 1;
             for (r = 0; r < rows; r++) {
               $("#table").append("<tr id=\"tr" + r + "\"></tr>");
                 for (c = 0; c < columns; c++) {
-                    id = r*columns + c;
-                    if(id < data.monitors.length){
-                      $("#tr" + r).append("<td onclick=\"drawDetailed(" + id + ")\" id=\"td" + id + "\"><div style='position: relative;' class=\"cell-chart\" id=\"cell-" + id + "\"></div></td>");
+                    index = r*columns + c;
+                    alert(index + "vs" + data.monitors.length)
+                    if(index < data.monitors.length){
+                        alert('hre')
+                      id = data.monitors[index].id
+                      $("#tr" + r).append("<td onclick=\"drawDetailed(monitors[" + index + "])\"><div style='position: relative;' class=\"cell-chart\" id=\"" + id + "\"></div></td>");
+                      monitors.push({'id': data.monitors[index].id, 'name': data.monitors[index].name, 'value_label': data.monitors[index].value_label, 'value_unit': data.monitors[index].value_unit});
+                      drawSimple(monitors[index]);
                     }
                 }
             };
-            // Populate monitors array
-            jQuery.each(data.monitors.reverse(), function(index, value) {
-                monitors.push({'check_id': value.id, 'check_name': value.name, 'value_label': value.value_label, 'value_unit': value.value_unit});
-            });
         });
+        if(focusId !== null){
+            $("#" + focusId).click();
+        };
     });
 }
 
 // Create charts on the cells
-function createPlots(width){
+function recreatePlots(width){
     var columns = window.columns;
     var w = (width-80)/columns;
 
     $(document).ready(function(){
-      $(".cell-chart").css("width", w +"px");
-      for (i = 0; i < monitors.length; i++) {
-      drawSimple(i);
-    }
+        $(".cell-chart").css("width", w +"px");
+        for (i = 0; i < monitors.length; i++) {
+            drawSimple(monitors[i]);
+        }
     });
 }
 
@@ -303,7 +305,7 @@ $(window).resize(function() {
     delay(function(){
         var win = $(this);
         $('.overlay-bg').hide(); // Hide overlay
-        createPlots($(this).width());
+        recreatePlots($(this).width());
     }, 500);
 });
 

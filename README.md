@@ -46,33 +46,6 @@ It is also saved, for convenience, a name for the monitor in key `"name:[ID]"`, 
 
 As a concrete example, if you start a monitor for a Pingdom check with `id = 123456`, it will save the keys `value_label:123456 "Response time` and `value_unit:1223456 "ms"`.
 
-## Pushing in data
-
-If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in.
-This allows you to pump in data from any event source at any pace.
-As this all runs in the one process, this is slightly more memory efficient.
-
-### Example:
-
-`make rebuild`
-
-This will have an input endpoint listening on port 8080, to push in data:
-
-```
-curl --data '{"check_id": "check_id_here", "time":EPOCH_TIME, "value":42}' http://docker_host:8080
-```
-The first time it sees that check_id, a monitor instance will be created.
-The time/value pair is the timeseries that is used as input.
-
-The response will be a JSON object saying if the check is currently CRITICAL or OK.
-You can of course use the API below to find out more information.
-
-If you want to pass in non default options (eg resolution), add a config map:
-`"config": {"name": "yeah"}` to the data you are inputting. resolution, webhook, anomaly_threshold, likelihood_threshold are the
-most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes.
-
-In the /examples directory are some helper scripts to test out this feature.
-
 ## API
 
 The results can be accessed via a RESTful API written in [Go] using [Martini].
@@ -145,6 +118,7 @@ There some acceptable URL parameters (with default values):
   * `columns=3`: number of columns to use in the charts grid.
   * `limit=60`: number of points to fetch for each chart.
   * `limit_detailed=1440`: number of points to fetch for detailed chart.
+  * `id=null`: monitor ID to focus.
   * `access_token=""`: if we specify a `access_token` in configuration file we need to pass it here.
 
   An example of how to use: `http:localhost/?columns=5&limit=120&access_token=imsafe`.
@@ -164,6 +138,33 @@ As we must pass some configuration files to the container, we mount the host vol
 We must pass at least one configuration file when starting the container and we can, optionally, pass a argument `-t SERVER_TOKEN` with a token to be used for access authentication of our API.
 
 Other parameter that we must specify is the  `[PUBLIC_PORT]` used by the Go server.
+
+### Pushing in data
+
+If you start the container with the parameter `-p 8080:8080 -e DYNAMIC=true` the app will listen on port 8080 for input data. This will create a monitor instance as needed - when a new check id comes in.
+This allows you to pump in data from any event source at any pace.
+As this all runs in the one process, this is slightly more memory efficient.
+
+#### Example:
+
+If you run the command `make rebuild`, you will have an input endpoint listening on port 8080.
+
+To push in data:
+
+```
+curl --data '{"check_id": "check_id_here", "time":EPOCH_TIME, "value":42}' http://docker_host:8080
+```
+The first time it sees that check_id, a monitor instance will be created.
+The time/value pair is the timeseries that is used as input.
+
+The response will be a JSON object saying if the check is currently CRITICAL or OK.
+You can of course use the API below to find out more information.
+
+If you want to pass in non default options (eg resolution), add a config map:
+`"config": {"name": "yeah"}` to the data you are inputting. resolution, webhook, anomaly_threshold, likelihood_threshold are the
+most relevant ones. Defaults are generally fine. The unit, label and name are used for display purposes.
+
+In the /examples directory are some helper scripts to test out this feature.
 
 ## Log files
 

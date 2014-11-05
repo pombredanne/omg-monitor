@@ -26,7 +26,7 @@ logger.setLevel(logging.INFO)
 multiprocessing.log_to_stderr(logging.DEBUG)
 
 def validate(config):
-    """ Validate configuration file. 
+    """ Validate configuration file.
         Input: dict already parsed with yaml.load.
         Output: string with success or error message.
     """
@@ -38,7 +38,7 @@ def validate(config):
     else:
         if 'source' not in config['stream'].keys():
             message = message + 'Stream source not specfied.\n'
-    
+
     if 'credentials' not in keys:
         message = message + 'Credentials not specfied.\n'
 
@@ -84,16 +84,16 @@ def run(stream_config, monitor_config):
     # Train monitor
     logger.info("Starting training: %s", stream_config['name'])
     monitor.train()
-        
+
     # Enter loop for online learning
     logger.info("Going online: %s", stream_config['name'])
-    monitor.loop()    
+    monitor.loop()
 
 if __name__ == "__main__":
     if(len(sys.argv) < 2):
         logger.info("Usage: run_monitor.py [config1.yaml config2.yaml ...]")
         sys.exit(0)
-    
+
     jobs_list = []
     for config_file in sys.argv[1:]:
         # Parse YAML configuration file
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         except Exception:
             logger.error('Invalid configuration file: %s', config_file, exc_info=True)
             continue
- 
+
         # Validade configuration
         validation_message = validate(config)
         if validation_message != '':
@@ -136,8 +136,9 @@ if __name__ == "__main__":
         monitor_config = {'resolution': int(config['parameters']['encoder_resolution']),
                           'seconds_per_request': int(config['parameters']['seconds_per_request']),
                           'webhook': config.get('webhook', None),
-                          'anomaly_threshold': config['parameters'].get('anomaly_threshold', 2.0),
-                          'likelihood_threshold': config['parameters'].get('likelihood_threshold', 2.0)}
+                          'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
+                          'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
+                          'domain': config.get('domain', 'localhost')}
 
         logger.info("Monitor configuration: %s", monitor_config)
 
@@ -150,18 +151,18 @@ if __name__ == "__main__":
         if monitors_ids is None:
             logger.info('No monitors IDs in configuration file. Will run everything.')
 
-            # Start the monitors sessions                 
+            # Start the monitors sessions
             for stream in streams:
                 stream_id = stream['id']
                 stream_name = stream['name']
-                
+
                 # Configuration to pass to stream class
-                stream_config = {'id': stream_id, 
+                stream_config = {'id': stream_id,
                                  'name': stream_name,
                                  'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
-                
+
                 # Start job
                 jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
@@ -169,24 +170,24 @@ if __name__ == "__main__":
             # Start the monitors sessions
             for stream_id in monitors_ids:
                 stream_id = str(stream_id)
-                stream_name = None    
+                stream_name = None
 
                 # Check if ID exist
                 for stream in streams:
                     if stream_id == stream['id']:
                         stream_name = stream['name']
-            
+
                 if stream_name is None:
                     logger.warn("Stream ID %s doesn't exist. Skipping this one.", stream_id)
                     continue
-                
+
                 # Configuration to pass to stream class
-                stream_config = {'id': stream_id, 
+                stream_config = {'id': stream_id,
                                  'name': stream_name,
                                  'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
                                  'credentials': credentials}
-                
+
                 # Start job
                 jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()

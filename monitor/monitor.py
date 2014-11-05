@@ -42,6 +42,8 @@ class Monitor(object):
         self.webhook = config['webhook']
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
+        self.domain = config['domain']
+        self.alert = False # Toogle when we get above threshold
 
         # Setup logging
         self.logger =  logger or logging.getLogger(__name__)
@@ -57,8 +59,7 @@ class Monitor(object):
 
         self.logger.info("=== Settings ===")
         self.logger.info("Webhook: %s", self.webhook)
-        self.logger.info("Anomaly threshold: %.2f", self.anomaly_threshold)
-        self.logger.info("Likelihood: %.2f", self.likelihood_threshold)
+        self.logger.info("Domain: %s", self.domain)
         self.logger.info("Seconds per request: %d", self.seconds_per_request)
 
         # Write metadata to Redis
@@ -108,27 +109,6 @@ class Monitor(object):
 
         self.logger.info("Processing: %s", strftime("%Y-%m-%d %H:%M:%S", model_input['time'].timetuple()))
 
-        # Write and send post to webhook
-        if is_to_post and self.webhook is not None:
-            report = {'anomaly_score': anomaly_score,
-                      'likelihood': likelihood,
-                      'model_input': {'time': model_input['time'].isoformat(),
-                                      'value': model_input['value']}}
-            report['triggered_threshold'] = []
-
-            # Set trigger
-            if self.anomaly_threshold is not None:
-                if anomaly_score > self.anomaly_threshold:
-                    report['triggered_threshold'].append('anomaly_score')
-
-            if self.likelihood_threshold is not None:
-                if likelihood > self.likelihood_threshold:
-                    report['triggered_threshold'].append('likelihood')
-
-            # Post only if one of the triggered_threshold is not empty
-            if report['triggered_threshold'] != []:
-                self._send_post(report)
-
         # Save results to Redis
         if inference[1]:
             try:
@@ -147,6 +127,7 @@ class Monitor(object):
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)
 
+        # See if above threshold (in which case anomalous is True)
         anomalous = False
         if self.anomaly_threshold is not None:
             if anomaly_score > self.anomaly_threshold:
@@ -154,6 +135,29 @@ class Monitor(object):
         if self.likelihood_threshold is not None:
             if likelihood > self.likelihood_threshold:
                 anomalous = True
+
+        if is_to_post:
+            # Check if it was in alert state in previous time step
+            was_alerted = self.alert
+            # Update alert state
+            self.alert = anomalous
+
+            # Send notification if webhook is set and if:
+            # was not alerted before and is alerted now (entered anomalous state)
+            # or
+            # was alerted before and is not alerted now (left anomalous state)
+            if self.webhook is not None and was_alerted != self.alert:
+                status = 'Entering' if self.alert else 'Leaving'
+                status += ' anomalous state'
+                report = {'status': status,
+                          'anomaly_score': anomaly_score,
+                          'likelihood': likelihood,
+                          'model_input': {'time': model_input['time'].isoformat(),
+                                          'value': model_input['value']}}
+                self._send_post(report)
+        else:
+          was_alerted = False # To ensure was alerted will be False after train
+
         return anomalous
 
     def delete(self):
@@ -167,12 +171,29 @@ class Monitor(object):
     def _send_post(self, report):
         """ Send HTTP POST notification. """
 
-        payload = {}
-        payload['sent_at'] = datetime.utcnow().isoformat()
-        payload['report'] = report
-        payload['monitor'] = self.stream.name
-        payload['source'] = type(self.stream).__name__
-        payload['metric'] = self.stream.value_label
+        if "hooks.slack.com" not in self.webhook:
+            payload = {'sent_at': datetime.utcnow().isoformat(),
+                       'report': report,
+                       'monitor': self.stream.name,
+                       'source': type(self.stream).__name__,
+                       'metric': '%s (%s)' % (self.stream.value_label, self.stream.value_unit)}
+        else:
+            payload = {'username': 'omg-monitor',
+                       'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/slack-integration/docs/images/post_icon.png',
+                       'text':  report['status'] + ': http://%s?id=%s' % (self.domain, self.stream.id),
+                       'attachments': [{'color': 'warning' if 'Entering' in report['status'] else 'good',
+                                        'fields': [{'title': 'Monitor',
+                                                    'value':  self.stream.name,
+                                                    'short': True},
+                                                   {'title': 'Source',
+                                                    'value': type(self.stream).__name__,
+                                                    'short': True},
+                                                   {'title': 'Metric',
+                                                    'value': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
+                                                    'short': True},
+                                                   {'title': 'Value',
+                                                    'value': report['model_input']['value'],
+                                                    'short': True}]}]}
 
         headers = {'Content-Type': 'application/json'}
         try:
@@ -181,5 +202,5 @@ class Monitor(object):
             self.logger.warn('Failed to post anomaly.', exc_info=True)
             return
 
-        self.logger.info('Anomaly posted with status code %d.', response.status_code)
+        self.logger.info('Anomaly posted with status code %d: %s', response.status_code, response.text)
         return

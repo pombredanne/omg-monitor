@@ -7,14 +7,16 @@
       <script type="text/javascript" src="/js/dygraph-combined.js" charset="utf-8"></script>
       <script type="text/javascript" src="/js/monitor.js" charset="utf-8"></script>
       <link rel="stylesheet" type="text/css" href="/css/style.css">
+      <script>
+         // Set chart width dynamically based on page's width
+          var w = ($(this).width()-80)/columns;
+          document.write("<style>.cell-chart {width: " + w + "px;}</style>");
+      </script>
     </head>
 
     <script type="text/javascript">
-        // Create table with divs for the plots
+        // Create grid of charts
         createGraphTable();
-
-        // Create the plots
-        createPlots($(this).width());
     </script>
 
     <body>

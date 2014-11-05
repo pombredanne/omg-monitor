@@ -68,7 +68,8 @@ def new_monitor(check_id, config):
                       'seconds_per_request': 60,
                       'webhook': None,
                       'likelihood_threshold': None,
-                      'anomaly_threshold': 0.9}
+                      'anomaly_threshold': 0.9,
+                      'domain': 'localhost'}
     monitor_config.update(config)
 
     logger.info("Monitor configuration: %s", monitor_config)
@@ -123,7 +124,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "%s"}' % res)
+        s.wfile.write('{"result": "%s"}\n' % res)
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
@@ -133,7 +134,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "OK"}')
+        s.wfile.write('{"result": "OK"}\n')
 
 if __name__ == "__main__":
     PORT=8080

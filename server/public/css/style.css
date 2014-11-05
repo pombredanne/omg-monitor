@@ -10,15 +10,16 @@ body {
 table {
     border-collapse: collapse;
     width: 100%;
+
 }
 table tr {
-    border:1px solid steelblue;
+    border:1px solid royalblue;
 }
 table td {
-    border:1px solid steelblue;
+    border:1px solid royalblue;
 }
 td:hover {
-    border:2px solid steelblue;
+    border:2px groove royalblue;
 }
 
 /* Overlay style */

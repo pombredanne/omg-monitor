@@ -68,7 +68,8 @@ def new_monitor(check_id, config):
                       'seconds_per_request': 60,
                       'webhook': None,
                       'likelihood_threshold': None,
-                      'anomaly_threshold': 0.9}
+                      'anomaly_threshold': 0.9,
+                      'domain': 'localhost'}
     monitor_config.update(config)
 
     logger.info("Monitor configuration: %s", monitor_config)

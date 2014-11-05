@@ -42,6 +42,7 @@ class Monitor(object):
         self.webhook = config['webhook']
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
+        self.domain = config['domain']
         self.alert = False # Toogle when we get above threshold
 
         # Setup logging
@@ -58,8 +59,7 @@ class Monitor(object):
 
         self.logger.info("=== Settings ===")
         self.logger.info("Webhook: %s", self.webhook)
-        self.logger.info("Anomaly threshold: %.2f", self.anomaly_threshold)
-        self.logger.info("Likelihood: %.2f", self.likelihood_threshold)
+        self.logger.info("Domain: %s", self.domain)
         self.logger.info("Seconds per request: %d", self.seconds_per_request)
 
         # Write metadata to Redis
@@ -180,7 +180,7 @@ class Monitor(object):
         else:
             payload = {'username': 'omg-monitor',
                        'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/slack-integration/docs/images/post_icon.png',
-                       'text':  report['status'] + ':',
+                       'text':  report['status'] + ': http://%s?id=%s' % (self.domain, self.stream.id),
                        'attachments': [{'color': 'warning' if 'Entering' in report['status'] else 'good',
                                         'fields': [{'title': 'Monitor',
                                                     'value':  self.stream.name,
@@ -193,12 +193,6 @@ class Monitor(object):
                                                     'short': True},
                                                    {'title': 'Value',
                                                     'value': report['model_input']['value'],
-                                                    'short': True},
-                                                   {'title': 'Anomaly Likelihood',
-                                                    'value': report['likelihood'],
-                                                    'short': True},
-                                                   {'title': 'Anomaly Score',
-                                                    'value': report['anomaly_score'],
                                                     'short': True}]}]}
 
         headers = {'Content-Type': 'application/json'}

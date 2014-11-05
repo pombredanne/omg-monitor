@@ -26,21 +26,18 @@ As example, we can have the following values:
 
 ## Monitor
 
-A monitor is composed by a stream and a NuPIC model that fed into that stream.
+A monitor is composed of a stream and a NuPIC model that fed into that stream.
 
 The script `monitor/run_monitor.py` reads a configuration YAML file and starts batches of monitors according to the configuration.
-`monitor/run_monitor_dyn.py` runs a little http endpoint allowing you to "push" in event data (vs pulling it from other streams).
-
+`monitor/run_monitor_dyn.py` runs a little HTTP endpoint allowing you to "push" in event data (vs pulling it from other streams).
 
 ### Configuration files
 
-Configurations files are similar in many aspects, the main difference being the credentials section, as the need credentials can be different for different streams. You can notice the difference in the following templates.
+Configuration files are similar in many aspects, the main difference being the credentials section, as the need credentials can be different for different streams. You can notice the difference in the templates we provide for Pingdom and Librato in [monitor/config_templates/].
 
 An important point is in regard with the `monitors` section, which may be omitted for any configuration file, in which case it will start monitors for every stream available of that type. For example, for Pingdom, it will start a monitor for each check found under the given credentials.
 
-We provide templates files for Pingdom and Librato in [monitor/config_templates/].
-
-If you are using the dynamic http event input - you don't need any config file (as the configuration data comes along with the data you push in).
+If you are using the dynamic HTTP event input - you don't need any config file (as the configuration data comes along with the data you push in).
 
 ## Output
 
@@ -139,9 +136,18 @@ Note you can choose whatever string you like in place of `SERVER_TOKEN` when spe
 
 ## API Client
 
-The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dynamically plot them. Currently we have three visualizations:
+The Go server also serves static HTML files that uses [jQuery] to access our API to get the results and dynamically plot them.
+Currently we have two visualizations:
 
 * The [index.html][2] file uses [dygraphs] to plot the last hour results with anomalies.
+If we click on any chart of the grid it opens a detailed interactive version of it.
+There some acceptable URL parameters (with default values):
+  * `columns=3`: number of columns to use in the charts grid.
+  * `limit=60`: number of points to fetch for each chart.
+  * `limit_detailed=1440`: number of points to fetch for detailed chart.
+  * `access_token=""`: if we specify a `access_token` in configuration file we need to pass it here.
+
+  An example of how to use: `http:localhost/?columns=5&limit=120&access_token=imsafe`.
 * The [gauge.html][1] file uses [justGage] to plot the latest anomalies likelihoods as gauge charts.
 
 See the session [Screenshots](#screenshots) for some examples.
@@ -228,8 +234,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 [dygraphs]:http://dygraphs.com/
 [jQuery]:http://jquery.com/
 [justGage]:http://justgage.com/
+[cloudwalk/nupic]:https://registry.hub.docker.com/u/cloudwalk/nupic/
 [python-restful-pingdom]:https://github.com/drcraig/python-restful-pingdom
-[allanino/nupic]:https://github.com/allanino/docker-nupic
 [monitor/config_templates/]:monitor/config_templates/
 [Dockerfile]:https://github.com/allanino/omg-monitor/blob/master/Dockerfile
 [monitor/run_monitor.py]:https://github.com/allanino/omg-monitor/blob/master/monitor/run_monitor.py

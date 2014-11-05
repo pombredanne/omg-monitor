@@ -205,13 +205,13 @@ class Monitor(object):
                         'short': True
                       },
                       {
-                        'title': 'Anomaly Score',
-                        'value': report['anomaly_score'],
+                        'title': 'Anomaly Likelihood',
+                        'value': report['likelihood'],
                         'short': True
                       },
                       {
-                        'title': 'Anomaly Likelihood',
-                        'value': report['likelihood'],
+                        'title': 'Anomaly Score',
+                        'value': report['anomaly_score'],
                         'short': True
                       }
                   ]

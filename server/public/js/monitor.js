@@ -262,9 +262,7 @@ function createGraphTable(){
               $("#table").append("<tr id=\"tr" + r + "\"></tr>");
                 for (c = 0; c < columns; c++) {
                     index = r*columns + c;
-                    alert(index + "vs" + data.monitors.length)
                     if(index < data.monitors.length){
-                        alert('hre')
                       id = data.monitors[index].id
                       $("#tr" + r).append("<td onclick=\"drawDetailed(monitors[" + index + "])\"><div style='position: relative;' class=\"cell-chart\" id=\"" + id + "\"></div></td>");
                       monitors.push({'id': data.monitors[index].id, 'name': data.monitors[index].name, 'value_label': data.monitors[index].value_label, 'value_unit': data.monitors[index].value_unit});

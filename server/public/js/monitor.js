@@ -252,17 +252,17 @@ function drawSimple(monitor, width){
 // Create a table with cells in which we'll draw our charts
 function createGraphTable(){
     var columns = window.columns;
-    var rows = 0;
     var index = 0;
     var id = "";
     $(document).ready(function(){
         $.getJSON( "/monitors?access_token=" + access_token, function( data ) {
-            rows = parseInt(data.monitors.length/columns) + 1;
-            for (r = 0; r < rows; r++) {
+            var numMonitors = data.monitors.length;
+            var rows = parseInt(numMonitors/columns) + 1;
+            for (var r = 0; r < rows; r++) {
               $("#table").append("<tr id=\"tr" + r + "\"></tr>");
-                for (c = 0; c < columns; c++) {
+                for (var c = 0; c < columns; c++) {
                     index = r*columns + c;
-                    if(index < data.monitors.length){
+                    if(index < numMonitors){
                       id = data.monitors[index].id
                       $("#tr" + r).append("<td onclick=\"drawDetailed(monitors[" + index + "])\"><div style='position: relative;' class=\"cell-chart\" id=\"" + id + "\"></div></td>");
                       monitors.push({'id': data.monitors[index].id, 'name': data.monitors[index].name, 'value_label': data.monitors[index].value_label, 'value_unit': data.monitors[index].value_unit});

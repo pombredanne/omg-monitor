@@ -124,7 +124,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "%s"}' % res)
+        s.wfile.write('{"result": "%s"}\n' % res)
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
@@ -134,7 +134,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "OK"}')
+        s.wfile.write('{"result": "OK"}\n')
 
 if __name__ == "__main__":
     PORT=8080

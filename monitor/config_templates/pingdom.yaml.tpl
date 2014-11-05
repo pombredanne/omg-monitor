@@ -1,5 +1,5 @@
 # Stream configurations
-stream: 
+stream:
   # Which stream to use
   source: pingdom
 
@@ -24,6 +24,11 @@ parameters:
     likelihood_threshold: 1.0
     anomaly_threshold: 1.0
 
+# [Optional ] Domain in which you'll be running the service.
+# This will be used to create links to anomalous monitors when reporting anomalies.
+# If not specified we'll use "localhost".
+domain: omg-monitor.ai
+
 # [Optional]  An endpoint that will receive POST request when something above
 # the defined thresholds is found. We post a JSON with the following structure:
 #
@@ -33,22 +38,16 @@ parameters:
 #    "source": "PingdomStream",
 #    "metric": "Response time",
 #    "report": {
+#        "status": "Entering anomalous state"
 #        "anomaly_score": 1,
 #        "likelihood": 0.841344746,
 #        "model_input": {
 #            "time": "2014-09-04T14:41:26",
 #            "value": 716
 #        },
-#        "triggered_threshold": [
-#            "anomaly_score",
-#            "likelihood"
-#        ]
 #    }
 #}
-#
-# In "triggered_threshold" we return a list with which thresholds triggered the POST.
-# It can contain anomaly_score or likelihhod or both.
-webhook: http://localhost/listening 
+webhook: http://localhost/listening
 
 # [Optional] A list with checks to monitor. If not supplied, we run everything.
 monitors: [123456, 875642]

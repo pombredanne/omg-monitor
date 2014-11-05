@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # another sample script to pump in data from the current time
-
+# Usage: ./currente_time_data localhost 153
+DOCKER=$1
 NOW=$(date +"%s")
-curl --data "{\"check_id\": \"mic3\", \"time\":$NOW, \"value\":$1}" http://boot2docker:8080
+curl --data "{\"check_id\": \"mic3\", \"time\":$NOW, \"value\":$2}" http://$DOCKER:8080

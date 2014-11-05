@@ -213,12 +213,7 @@ class Monitor(object):
                         'title': 'Anomaly Likelihood',
                         'value': report['likelihood'],
                         'short': True
-                      },
-                      {
-                        'title': 'Time',
-                        'value': report['model_input']['time'],
-                        'short': True
-                      },
+                      }
                   ]
               }
             ]

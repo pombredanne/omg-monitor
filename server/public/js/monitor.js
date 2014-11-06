@@ -92,6 +92,7 @@ function drawDetailed(monitor){
       legend: 'always',
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Value', 'Average', 'Predicted'],
+      colors: ['rgb(0, 128, 128)', 'rgb(40,125,35)', 'rgb(8, 130, 210)'],
       visibility: window.visibility,
       axisLabelFontSize: 12,
       drawCallback: function(me, initial) {
@@ -196,6 +197,7 @@ function drawSimple(monitor, width){
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Value', 'Average', 'Predicted'],
+      colors: ['rgb(0, 128, 128)', 'rgb(40,125,35)', 'rgb(8, 130, 210)'],
       visibility: window.visibility,
       axisLabelFontSize: 12,
       interactionModel: {},

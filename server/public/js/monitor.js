@@ -34,16 +34,29 @@ if(limitDetailed === null){
 };
 
 // Get URL parameter with id to focus on
-var focusId = getURLParameter('id')
+var focusId = getURLParameter('id');
+
+// Get URL parameter to see if we are in debug mode. If so, we plot extra info.
+var debug = getURLParameter('debug');
+if(debug === null){
+    debug = false
+} else {
+    debug = (debug.toLowerCase() === 'true');
+};
+
+if(debug) {
+    var visibility = [true, true, true];
+} else {
+    var visibility = [true, false, false];
+};
 
 // Callbacks to map JSON to arrays recognizable by dygraphs
 function Json2PredictionArray(d) {
-    return [new Date(d.time*1000), d.actual, d.predicted];
-}
-
+    return [new Date(d.time*1000), d.raw_value, d.average_value, d.predicted];
+};
 function Json2AnomalyArray(d) {
     return [new Date(d.time*1000), d.anomaly, d.likelihood];
-}
+};
 
 // Function using dygraphs to draw a interactive detailed plot
 function drawDetailed(monitor){
@@ -78,7 +91,8 @@ function drawDetailed(monitor){
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       legend: 'always',
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
-      labels: ['Time', 'Actual', 'Predicted'],
+      labels: ['Time', 'Value', 'Average', 'Predicted'],
+      visibility: window.visibility,
       axisLabelFontSize: 12,
       drawCallback: function(me, initial) {
         if (blockRedraw || initial) return;
@@ -181,7 +195,8 @@ function drawSimple(monitor, width){
       title: monitor.name,
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
-      labels: ['Time', 'Actual', 'Predicted'],
+      labels: ['Time', 'Value', 'Average', 'Predicted'],
+      visibility: window.visibility,
       axisLabelFontSize: 12,
       interactionModel: {},
       highlightCallback: function(e,x,pts,row,seriesName) {

@@ -102,6 +102,7 @@ class PingdomStream(BaseStream):
                     model_input['responsetime'] = self.timeout_default
 
                 self.history.appendleft(float(model_input['responsetime']))
+                model_input['raw_value'] = model_input['responsetime']
                 model_input['value'] = self._moving_average()
 
                 new_data.append(model_input)

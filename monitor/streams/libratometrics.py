@@ -102,6 +102,7 @@ class LibratometricsStream(BaseStream):
                 model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
                 self.history.appendleft(float(model_input['value']))
+                model_input['raw_value'] = model_input['value']
                 model_input['value'] = self._moving_average()
 
                 new_data.append(model_input)

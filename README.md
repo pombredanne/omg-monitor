@@ -119,6 +119,7 @@ There some acceptable URL parameters (with default values):
   * `limit=60`: number of points to fetch for each chart.
   * `limit_detailed=1440`: number of points to fetch for detailed chart.
   * `id=null`: monitor ID to focus.
+  * `debug=false`: if we should plot raw value, predicted value and averaged value. Default is to show only the raw value fetched by the stream.
   * `access_token=""`: if we specify a `access_token` in configuration file we need to pass it here.
 
   An example of how to use: `http:localhost/?columns=5&limit=120&access_token=imsafe`.

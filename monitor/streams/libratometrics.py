@@ -54,8 +54,8 @@ class LibratometricsStream(BaseStream):
         historic_data = []
         while time_start < time_now:
             try:
-                cpu = self.libr.get(self.metric, start_time=time_start, count=100, resolution=60, source=self.id)
-                measurements = cpu.measurements[self.id]
+                metric_results = self.libr.get(self.metric, start_time=time_start, count=100, resolution=60, source=self.id)
+                measurements = metric_results.measurements[self.id]
             except Exception:
                 logger.warn("Could not get Librato AWS CPU results.", exc_info=True)
                 continue

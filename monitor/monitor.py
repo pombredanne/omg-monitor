@@ -123,7 +123,6 @@ class Monitor(object):
                 ln = self.db.llen('results:%s' % self.stream.id)
                 if ln > max_items:
                     self.db.ltrim('results:%s' % self.stream.id, ln - max_items, ln)
-
             except Exception:
                 self.logger.warn("Could not write results to redis.", exc_info=True)
 
@@ -136,7 +135,8 @@ class Monitor(object):
             if likelihood > self.likelihood_threshold:
                 anomalous = True
 
-        if is_to_post:
+        # Post if webhook is not None
+        if is_to_post and self.webhook is not None:
             # Check if it was in alert state in previous time step
             was_alerted = self.alert
             # Update alert state
@@ -146,7 +146,7 @@ class Monitor(object):
             # was not alerted before and is alerted now (entered anomalous state)
             # or
             # was alerted before and is not alerted now (left anomalous state)
-            if self.webhook is not None and was_alerted != self.alert:
+            if was_alerted != self.alert:
                 status = 'Entering' if self.alert else 'Leaving'
                 status += ' anomalous state'
                 report = {'status': status,
@@ -155,9 +155,7 @@ class Monitor(object):
                           'model_input': {'time': model_input['time'].isoformat(),
                                           'value': model_input['value']}}
                 self._send_post(report)
-        else:
-          was_alerted = False # To ensure was alerted will be False after train
-
+        # Return anomalous state
         return anomalous
 
     def delete(self):

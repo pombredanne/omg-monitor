@@ -32,31 +32,39 @@ class BaseStream(object):
 
         # Time to keep watch for new values
         self.servertime = 0
-        
+
         # Deque to keep history of input values for smoothing
-        moving_average_window = config['moving_average_window'] 
+        moving_average_window = config['moving_average_window']
         self.history = deque([0.0] * moving_average_window, maxlen=moving_average_window)
 
     @abc.abstractmethod
     def historic_data(self):
-        """ Return a list of data to be used at training. 
-            Should return a structure like this: 
-                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
+        """ Return a list of data to be used at training.
+            Should return a structure like this:
+                [{'raw_value': r1, 'value': v1, 'time': t1}, {'raw_value': r1, 'value': v2, 'time': t2}]
+            The fields are:
+            * 'raw_value': raw value for the metric.
+            * 'value': averaged value (see moving_average) passed to the model.
+            * 'time': unix timestamp used to compute anomaly likelihood.
         """
         pass
 
     @abc.abstractmethod
     def new_data(self):
         """ Return a list of new data since last update.
-            Should return a structure like this: 
-                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
+            Should return a structure like this:
+                [{'raw_value': r1, 'value': v1, 'time': t1}, {'raw_value': r1, 'value': v2, 'time': t2}]
+            The fields are:
+            * 'raw_value': raw value for the metric.
+            * 'value': averaged value (see moving_average) passed to the model.
+            * 'time': unix timestamp used to compute anomaly likelihood.
         """
         pass
 
     @abstractclassmethod
     def available_streams(cls, data):
-        """ Return a list with available streams for the class implementing this. Should return a list : 
-                [{'id': i1, 'name': n1}, {'id': i2, 'name': n2}] 
+        """ Return a list with available streams for the class implementing this. Should return a list :
+                [{'id': i1, 'name': n1}, {'id': i2, 'name': n2}]
         """
         pass
 

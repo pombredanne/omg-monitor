@@ -9,21 +9,21 @@ logger = logging.getLogger(__name__)
 
 class LibratometricsStream(BaseStream):
     """ Class to provide a stream of data to NuPIC. """
-    
+
     @property
     def value_label(self):
         return self._value_label
-    
+
     @property
     def value_unit(self):
         return self._value_unit
 
     def __init__(self, config):
-        
+
         super(LibratometricsStream, self).__init__(config)
 
         # Set Librato object
-        self.libr = librato.connect(config['credentials']['username'], 
+        self.libr = librato.connect(config['credentials']['username'],
                                     config['credentials']['token'])
 
         # Set metric to use
@@ -59,13 +59,14 @@ class LibratometricsStream(BaseStream):
             except Exception:
                 logger.warn("Could not get Librato AWS CPU results.", exc_info=True)
                 continue
-                 
+
             for model_input in measurements:
                 if  self.servertime < model_input['measure_time']:
                     self.servertime  = model_input['measure_time']
                     model_input['time'] = datetime.utcfromtimestamp(self.servertime)
 
                     self.history.appendleft(float(model_input['value']))
+                    model_input['raw_value'] = model_input['value']
                     model_input['value'] = self._moving_average()
 
                     historic_data.append(model_input)
@@ -93,7 +94,7 @@ class LibratometricsStream(BaseStream):
         for r in librato_results[-5::1]:
             self.logger.info("\t%12d%12.3f", r['measure_time'], r['value'])
 
-        # If any result contains new responses (ahead of [servetime]) process it. 
+        # If any result contains new responses (ahead of [servetime]) process it.
         # We check the last 5 results, so that we don't many lose data points.
         for model_input in librato_results[-5::1]:
             if self.servertime < model_input['measure_time']:
@@ -111,13 +112,13 @@ class LibratometricsStream(BaseStream):
 
     @classmethod
     def available_streams(cls, data):
-        """ Return a list with available streams for the class implementing this. Should return a list : 
-                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
+        """ Return a list with available streams for the class implementing this. Should return a list :
+                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}]
         """
 
         # Get CPU measutements (we use it get the ID of the instances)
         libr = librato.connect(data['credentials']['username'], data['credentials']['token'])
-       
+
         metric = libr.get(data['metric'], count=100, resolution=1)
         instances_list = [i for i in metric.measurements]
 

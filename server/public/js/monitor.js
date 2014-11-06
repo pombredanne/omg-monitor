@@ -185,9 +185,9 @@ function drawSimple(monitor, width){
   var div_pred = "<div class='chart-predictions' id='chart-predictions-" + monitor.id + "'></div>"
   var div_panel = "<div class='chart-panel' id='chart-panel-" + monitor.id + "'></div>"
   var div_anomaly = "<div class='chart-anomalies' id='chart-anomalies-" + monitor.id + "'></div>"
-  $('#' + monitor.id).empty();
-  $('#' + monitor.id).append(div_pred, div_panel, div_anomaly)
-
+  $('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&')).empty();
+  $('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&')).append(div_pred, div_panel, div_anomaly)
+  console.log('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&'))
   // Plot predictions
   var gs = [] // Array with plots for this id
   var g1_pred = new Dygraph(

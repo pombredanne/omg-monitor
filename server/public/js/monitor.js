@@ -183,6 +183,7 @@ function drawSimple(monitor, width){
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
       labels: ['Time', 'Actual', 'Predicted'],
       axisLabelFontSize: 12,
+      interactionModel: {},
       highlightCallback: function(e,x,pts,row,seriesName) {
         gs[1].setSelection(row); // Synchronize both charts
       },
@@ -202,23 +203,7 @@ function drawSimple(monitor, width){
       colors: ['rgb(6,60,210)', 'rgb(80,20,120)'],
       axisLabelFontSize: 12,
       valueRange: [0, 1.2],
-      interactionModel: {
-        mousedown: function(event, g, context) {
-          context.initializeMouseDown(event, g, context);
-          Dygraph.startPan(event, g, context);
-        },
-        mousemove: function(event, g, context) {
-          if (context.isPanning) {
-            Dygraph.movePan(event, g, context);
-            g1_anomaly.updateOptions({valueRange:[0, 1.2]});
-          }
-        },
-        mouseup: function(event, g, context) {
-          if (context.isPanning) {
-            Dygraph.endPan(event, g, context);
-          }
-        }
-      },
+      interactionModel: {},
       highlightCallback: function(e,x,pts,row,seriesName) {
         gs[0].setSelection(row); // Synchronize both charts
       },

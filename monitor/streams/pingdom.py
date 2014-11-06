@@ -9,22 +9,22 @@ logger = logging.getLogger(__name__)
 
 class PingdomStream(BaseStream):
     """ Class to provide a stream of data to NuPIC. """
-    
+
     @property
     def value_label(self):
         return "Response time"
-    
+
     @property
     def value_unit(self):
         return "ms"
 
     def __init__(self, config):
-        
+
         super(PingdomStream, self).__init__(config)
 
         # Set Pingdom object
-        self.ping = pingdom.Pingdom(username=config['credentials']['username'], 
-                                    password=config['credentials']['password'], 
+        self.ping = pingdom.Pingdom(username=config['credentials']['username'],
+                                    password=config['credentials']['password'],
                                     appkey=config['credentials']['appkey'])
 
         # Default value to associate with timeouts (to have something to feed NuPIC)
@@ -67,6 +67,7 @@ class PingdomStream(BaseStream):
                 model_input['responsetime'] = self.timeout_default
 
             self.history.appendleft(float(model_input['responsetime']))
+            model_input['raw_value'] = model_input['responsetime']
             model_input['value'] = self._moving_average()
 
             self.servertime  = int(model_input['time'])
@@ -78,7 +79,7 @@ class PingdomStream(BaseStream):
 
     def new_data(self):
         """ Return list of new data points since last fetching. """
-        
+
         self.logger.info("Server time before processing results: %d", self.servertime)
 
         new_data = []
@@ -88,7 +89,7 @@ class PingdomStream(BaseStream):
             self.logger.warn("Could not get Pingdom results.", exc_info=True)
             return new_data
 
-        # If any result contains new responses (ahead of [servetime]) process it. 
+        # If any result contains new responses (ahead of [servetime]) process it.
         # We check the last 5 results, so that we don't many lose data points.
         for model_input in pingdom_results[4::-1]:
             if self.servertime < int(model_input['time']):
@@ -104,19 +105,19 @@ class PingdomStream(BaseStream):
                 model_input['value'] = self._moving_average()
 
                 new_data.append(model_input)
-        
+
         self.logger.info("Server time after processing results: %d", self.servertime)
         self.logger.info("New data: %s", new_data)
         return new_data
 
     @classmethod
     def available_streams(cls, data):
-        """ Return a list with available streams for the class implementing this. Should return a list : 
-                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}] 
+        """ Return a list with available streams for the class implementing this. Should return a list :
+                [{'value': v1, 'time': t1}, {'value': v2, 'time': t2}]
         """
         # Set Pingdom object
-        ping = pingdom.Pingdom(username=data['credentials']['username'], 
-                               password=data['credentials']['password'], 
+        ping = pingdom.Pingdom(username=data['credentials']['username'],
+                               password=data['credentials']['password'],
                                appkey=data['credentials']['appkey'])
         checks = ping.method('checks')
         result = []

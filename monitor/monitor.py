@@ -187,10 +187,10 @@ class Monitor(object):
                                                     'value':  'http://%s?id=%s' % (self.domain, self.stream.id),
                                                     'short': False},
                                                    {'title': 'Metric',
-                                                    'value': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
+                                                    'value': self.stream.value_label,
                                                     'short': True},
                                                    {'title': 'Value',
-                                                    'value': report['model_input']['value'],
+                                                    'value': '%f %s' % (report['model_input']['value'], self.stream.value_unit),
                                                     'short': True}]}]}
 
         headers = {'Content-Type': 'application/json'}

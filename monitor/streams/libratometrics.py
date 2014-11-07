@@ -45,6 +45,8 @@ class LibratometricsStream(BaseStream):
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
 
+        self.logger.info("=== Settings ===")
+        self.logger.info("Transform: %s", self.transform)
 
     def historic_data(self):
         """ Return a batch of data to be used at training """
@@ -67,8 +69,8 @@ class LibratometricsStream(BaseStream):
 
                     self.history.appendleft(float(model_input['value']))
                     model_input['raw_value'] = model_input['value']
-                    model_input['value'] = self._moving_average()
-
+                    model_input['value'] = self._transform()
+                    self.logger.info('Raw value: %f\tTransformed: %f', model_input['raw_value'], model_input['value'])
                     historic_data.append(model_input)
             time_start = time_start + 100*60
 
@@ -103,7 +105,9 @@ class LibratometricsStream(BaseStream):
 
                 self.history.appendleft(float(model_input['value']))
                 model_input['raw_value'] = model_input['value']
-                model_input['value'] = self._moving_average()
+                model_input['value'] = self._transform()
+
+                self.logger.info('Raw value: %f\tTransformed: %f', model_input['raw_value'], model_input['value'])
 
                 new_data.append(model_input)
 
@@ -123,8 +127,18 @@ class LibratometricsStream(BaseStream):
         metric = libr.get(data['metric'], count=100, resolution=1)
         instances_list = [i for i in metric.measurements]
 
+        # Get sources display names
+        sources = libr._mexe('sources')['sources']
+        names = {}
+        for s in sources:
+            if s['display_name'] is not None:
+                names[s['name']] = s['display_name']
+            else:
+                names[s['name']] = s['name']
+        logger.info('Librato names: %s', names)
         result = []
         for id_ in instances_list:
-            result.append({'id': id_, 'name': id_}) # Doesn't have a way to get better names
+            name = names.get(id_, id_)
+            result.append({'id': id_, 'name': name}) # Doesn't have a way to get better names
 
         return result

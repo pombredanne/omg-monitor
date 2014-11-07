@@ -56,6 +56,8 @@ EXPOSE 5000
 # Set directory for logs
 ENV LOG_DIR /var/log/docker/monitor
 
+ENV OMG_MONITOR_PORT 5000
+
 WORKDIR /home/docker/omg-monitor/
 
 

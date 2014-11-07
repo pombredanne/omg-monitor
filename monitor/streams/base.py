@@ -33,8 +33,11 @@ class BaseStream(object):
         # Time to keep watch for new values
         self.servertime = 0
 
-        # Deque to keep history of input values for smoothing
+        self.scaling_factor = config['scaling_factor']
+        self.transform = config['transform']
         moving_average_window = config['moving_average_window']
+
+        # Deque to keep history of input values for smoothing
         self.history = deque([0.0] * moving_average_window, maxlen=moving_average_window)
 
     @abc.abstractmethod
@@ -68,7 +71,19 @@ class BaseStream(object):
         """
         pass
 
+    def _transform(self):
+        if self.transform == "moving_average":
+            return self._moving_average()
+        if self.transform == "scale":
+            return self._scale()
+
     def _moving_average(self):
         """ Used to smooth input data. """
 
         return sum(self.history)/len(self.history) if len(self.history) > 0 else 0.0
+
+
+    def _scale(self):
+        """ Used to scale input data. """
+
+        return self.history[-1]*self.scaling_factor

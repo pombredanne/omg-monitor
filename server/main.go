@@ -33,7 +33,7 @@ type Results struct {
 type ResultType struct {
     Time int64 `json:"time"`
     RawValue float64 `json:"raw_value"`
-    Actual float64 `json:"average_value"`
+    Actual float64 `json:"transformed"`
     Predicted float64 `json:"predicted"`
     Anomaly float64 `json:"anomaly"`
     Likelihood float64 `json:"likelihood"`

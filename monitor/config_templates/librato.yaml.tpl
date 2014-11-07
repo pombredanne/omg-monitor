@@ -17,11 +17,20 @@ parameters:
     # Resolution of NuPIC RandomDistributedScalarEncoder to use
     encoder_resolution: 25
 
-    # How many points to use for data smoothing via moving average
-    moving_average_window: 5
-
     # Time sleep between requests when it's in online learning
     seconds_per_request: 60
+
+    # [Optional] Which transformation to apply to data before feeding it to NuPIC
+    # We have two admissably transformations
+    # * moving_average: smooth data by averaging it over a given window
+    # * scale: scale data by multiplying it by a given factor
+    transform: scale
+
+    # [Optional] How many points to use for data smoothing when doing averaging
+    moving_average_window: 1
+
+    # [Optional] Factor to multiply each data value when using scale transform
+    scaling_factor: 1
 
     # [Optional] Thresholds that triggers a POST to the webhook (if supplied)
     likelihood_threshold: 1.0

@@ -190,7 +190,7 @@ class Monitor(object):
                                                     'value': self.stream.value_label,
                                                     'short': True},
                                                    {'title': 'Value',
-                                                    'value': '%f %s' % (report['model_input']['value'], self.stream.value_unit),
+                                                    'value': str(report['model_input']['value']) + ' ' + self.stream.value_unit,
                                                     'short': True}]}]}
 
         headers = {'Content-Type': 'application/json'}

@@ -11,6 +11,7 @@ import (
     "log"
     "time"
     "flag"
+    "os"
 )
 
 var token = flag.String("token", "", "access_token that must be validated.")
@@ -195,9 +196,14 @@ func main() {
         return http.StatusOK, string(getJsonMonitors(reply))
     })
 
-    fmt.Printf("[martini] Listening on port 5000\n")
-    err := http.ListenAndServe("0.0.0.0:5000", m)
-    if err != nil {
-        fmt.Printf("Error: %s", err)
+    port := os.Getenv("OMG_MONITOR_PORT")
+    if port != "" {
+        fmt.Printf("[martini] Listening on port " + port + "\n")
+        err := http.ListenAndServe("0.0.0.0:"+port, m)
+        if err != nil {
+            fmt.Printf("Error: %s", err)
+        }
+    } else {
+        log.Printf("Environment variable OMG_MONITOR_PORT not found \n")
     }
 }

@@ -42,7 +42,9 @@ class PingdomStream(BaseStream):
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
 
-
+        self.logger.info("=== Settings ===")
+        self.logger.info("Transform: %s", self.transform)
+        
     def historic_data(self):
         """ Return a batch of data to be used at training """
 
@@ -68,7 +70,8 @@ class PingdomStream(BaseStream):
 
             self.history.appendleft(float(model_input['responsetime']))
             model_input['raw_value'] = model_input['responsetime']
-            model_input['value'] = self._moving_average()
+            model_input['value'] = self._transform()
+            self.logger.info('Raw value: %f\tTransformed: %f', model_input['raw_value'], model_input['value'])
 
             self.servertime  = int(model_input['time'])
             model_input['time'] = datetime.utcfromtimestamp(self.servertime)
@@ -103,7 +106,8 @@ class PingdomStream(BaseStream):
 
                 self.history.appendleft(float(model_input['responsetime']))
                 model_input['raw_value'] = model_input['responsetime']
-                model_input['value'] = self._moving_average()
+                model_input['value'] = self._transform()
+                self.logger.info('Raw value: %f\tTransformed: %f', model_input['raw_value'], model_input['value'])
 
                 new_data.append(model_input)
 

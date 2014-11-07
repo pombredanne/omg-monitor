@@ -35,6 +35,12 @@ class BaseStream(object):
 
         self.scaling_factor = config['scaling_factor']
         self.transform = config['transform']
+
+        # If no transform is given, default to scale with factor 1 (= do nothing!)
+        if self.transform not in ['moving_average', 'scale']:
+            self.transform = 'scale'
+            self.scaling_factor = 1
+
         moving_average_window = config['moving_average_window']
 
         # Deque to keep history of input values for smoothing

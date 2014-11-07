@@ -52,7 +52,7 @@ if(debug) {
 
 // Callbacks to map JSON to arrays recognizable by dygraphs
 function Json2PredictionArray(d) {
-    return [new Date(d.time*1000), d.raw_value, d.average_value, d.predicted];
+    return [new Date(d.time*1000), d.raw_value, d.transformed, d.predicted];
 };
 function Json2AnomalyArray(d) {
     return [new Date(d.time*1000), d.anomaly, d.likelihood];
@@ -91,7 +91,7 @@ function drawDetailed(monitor){
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       legend: 'always',
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
-      labels: ['Time', 'Value', 'Average', 'Predicted'],
+      labels: ['Time', 'Value', 'Transformed', 'Predicted'],
       colors: ['rgb(0, 128, 128)', 'rgb(40,125,35)', 'rgb(8, 130, 210)'],
       visibility: window.visibility,
       axisLabelFontSize: 12,
@@ -187,7 +187,7 @@ function drawSimple(monitor, width){
   var div_anomaly = "<div class='chart-anomalies' id='chart-anomalies-" + monitor.id + "'></div>"
   $('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&')).empty();
   $('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&')).append(div_pred, div_panel, div_anomaly)
-  console.log('#' + monitor.id.replace(/[^\w\s]/gi, '\\$&'))
+
   // Plot predictions
   var gs = [] // Array with plots for this id
   var g1_pred = new Dygraph(
@@ -196,7 +196,7 @@ function drawSimple(monitor, width){
       title: monitor.name,
       ylabel: monitor.value_label + " (" + monitor.value_unit + ")",
       labelsDivStyles: { 'textAlign': 'right', 'background': 'rgba(180,180,180,0.65)'},
-      labels: ['Time', 'Value', 'Average', 'Predicted'],
+      labels: ['Time', 'Value', 'Transformed', 'Predicted'],
       colors: ['rgb(0, 128, 128)', 'rgb(40,125,35)', 'rgb(8, 130, 210)'],
       visibility: window.visibility,
       axisLabelFontSize: 12,
@@ -274,7 +274,7 @@ function createGraphTable(){
             };
         });
         if(focusId !== null){
-            $("#" + focusId).click();
+            $("#" + focusId.replace(/[^\w\s]/gi, '\\$&')).click();
         };
     });
 }

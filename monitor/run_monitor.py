@@ -45,11 +45,6 @@ def validate(config):
     if 'parameters' not in keys:
         message = message + 'Parameters not specfied.\n'
     else:
-        if 'moving_average_window' not in config['parameters'].keys():
-            message = message + 'Moving average window not specfied.\n'
-        elif not isinstance(config['parameters']['moving_average_window'], (int, long)):
-            message = message + 'Moving average window should be an integer.\n'
-
         if 'encoder_resolution' not in config['parameters'].keys():
             message = message + 'Encoder resolution not specfied.\n'
         elif not isinstance(config['parameters']['encoder_resolution'], (int, long)):
@@ -143,7 +138,9 @@ if __name__ == "__main__":
         logger.info("Monitor configuration: %s", monitor_config)
 
         # Get other stream parameters
-        moving_average_window = int(config['parameters']['moving_average_window'])
+        moving_average_window = int(config['parameters'].get('moving_average_window', 1))
+        scaling_factor = float(config['parameters'].get('scaling_factor', 1))
+        transform = config['parameters'].get('transform', 'scale')
         stream_metric = config['stream'].get('metric', None)
 
         # If don't have specfied monitors, run everything!
@@ -161,6 +158,8 @@ if __name__ == "__main__":
                                  'name': stream_name,
                                  'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
+                                 'scaling_factor': scaling_factor,
+                                 'transform': transform,
                                  'credentials': credentials}
 
                 # Start job
@@ -186,6 +185,8 @@ if __name__ == "__main__":
                                  'name': stream_name,
                                  'metric': stream_metric,
                                  'moving_average_window': moving_average_window,
+                                 'scaling_factor': scaling_factor,
+                                 'transform': transform,
                                  'credentials': credentials}
 
                 # Start job

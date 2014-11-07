@@ -33,7 +33,8 @@ type Results struct {
 
 type ResultType struct {
     Time int64 `json:"time"`
-    Actual float64 `json:"actual"`
+    RawValue float64 `json:"raw_value"`
+    Actual float64 `json:"transformed"`
     Predicted float64 `json:"predicted"`
     Anomaly float64 `json:"anomaly"`
     Likelihood float64 `json:"likelihood"`
@@ -122,12 +123,13 @@ func getJsonResults(redisResponse []interface{}) []byte {
 
         // Set the fields that will compose the ResultType object
         time, _ := strconv.ParseInt(fields[0], 10, 64)
-        actual, _ := strconv.ParseFloat(fields[1], 64)
-        predicted, _ := strconv.ParseFloat(fields[2], 64)
-        anomaly, _ := strconv.ParseFloat(fields[3], 64)
-        likelihood, _ := strconv.ParseFloat(fields[4], 64)
+        rawValue, _ := strconv.ParseFloat(fields[1], 64)
+        actual, _ := strconv.ParseFloat(fields[2], 64)
+        predicted, _ := strconv.ParseFloat(fields[3], 64)
+        anomaly, _ := strconv.ParseFloat(fields[4], 64)
+        likelihood, _ := strconv.ParseFloat(fields[5], 64)
 
-        results[k] = ResultType{time, actual, predicted, anomaly, likelihood}
+        results[k] = ResultType{time, rawValue, actual, predicted, anomaly, likelihood}
     }
 
     b,_ := json.MarshalIndent(Results{results}, "", "  ")
@@ -197,11 +199,11 @@ func main() {
     port := os.Getenv("OMG_MONITOR_PORT")
     if port != "" {
         fmt.Printf("[martini] Listening on port " + port + "\n")
-        err := http.ListenAndServe("0.0.0.0:"+port, m)
+        err := http.ListenAndServe("0.0.0.0:" + port, m)
         if err != nil {
             fmt.Printf("Error: %s", err)
         }
     } else {
-        log.Printf("Environment variable OMG_MONITOR_PORT not found \n")
+        log.Printf("Environment variable OMG_MONITOR_PORT not found.\n")
     }
 }

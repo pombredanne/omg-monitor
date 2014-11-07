@@ -112,9 +112,13 @@ class Monitor(object):
         # Save results to Redis
         if inference[1]:
             try:
-                # Save in redis with key = 'results:monitor_id' and value = 'time, actual, prediction, anomaly'
+                # Save in redis with key = 'results:monitor_id' and value = 'time, raw_value, actual, prediction, anomaly'
+                # * actual: is the value processed  by the NuPIC model, which can be
+                #           an average of raw_values
+                # * predicition: prediction based on 'actual' values.
                 self.db.rpush('results:%s' % self.stream.id,
-                              '%s,%.5f,%.5f,%.5f,%.5f' % (timestamp,
+                              '%s,%.5f,%.5f,%.5f,%.5f,%.5f' % (timestamp,
+                                                          model_input['raw_value'],
                                                           result.rawInput['value'],
                                                           result.inferences['multiStepBestPredictions'][1],
                                                           anomaly_score,
@@ -129,10 +133,10 @@ class Monitor(object):
         # See if above threshold (in which case anomalous is True)
         anomalous = False
         if self.anomaly_threshold is not None:
-            if anomaly_score > self.anomaly_threshold:
+            if anomaly_score >= self.anomaly_threshold:
                 anomalous = True
         if self.likelihood_threshold is not None:
-            if likelihood > self.likelihood_threshold:
+            if likelihood >= self.likelihood_threshold:
                 anomalous = True
 
         # Post if webhook is not None
@@ -146,15 +150,13 @@ class Monitor(object):
             # was not alerted before and is alerted now (entered anomalous state)
             # or
             # was alerted before and is not alerted now (left anomalous state)
-            if was_alerted != self.alert:
-                status = 'Entering' if self.alert else 'Leaving'
-                status += ' anomalous state'
-                report = {'status': status,
-                          'anomaly_score': anomaly_score,
+            if not was_alerted and self.alert:
+                report = {'anomaly_score': anomaly_score,
                           'likelihood': likelihood,
                           'model_input': {'time': model_input['time'].isoformat(),
                                           'value': model_input['value']}}
                 self._send_post(report)
+                was_alerted
         # Return anomalous state
         return anomalous
 
@@ -174,18 +176,16 @@ class Monitor(object):
                        'report': report,
                        'monitor': self.stream.name,
                        'source': type(self.stream).__name__,
-                       'metric': '%s (%s)' % (self.stream.value_label, self.stream.value_unit)}
+                       'metric': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
+                       'chart': 'http://%s?id=%s' % (self.domain, self.stream.id)}
         else:
             payload = {'username': 'omg-monitor',
                        'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/slack-integration/docs/images/post_icon.png',
-                       'text':  report['status'] + ': http://%s?id=%s' % (self.domain, self.stream.id),
-                       'attachments': [{'color': 'warning' if 'Entering' in report['status'] else 'good',
-                                        'fields': [{'title': 'Monitor',
-                                                    'value':  self.stream.name,
-                                                    'short': True},
-                                                   {'title': 'Source',
-                                                    'value': type(self.stream).__name__,
-                                                    'short': True},
+                       'text':  'Anomalous state in *%s* from _%s_:' % (self.stream.name, type(self.stream).__name__),
+                       'attachments': [{'color': 'warning',
+                                        'fields': [{'title': 'Chart',
+                                                    'value':  'http://%s?id=%s' % (self.domain, self.stream.id),
+                                                    'short': False},
                                                    {'title': 'Metric',
                                                     'value': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
                                                     'short': True},

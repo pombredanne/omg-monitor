@@ -12,29 +12,23 @@ credentials:
     username: USERNAME
     token: TOKEN
 
-# Monitors parameters
+# [Optional] Monitors parameters. Have defaults if we omit it, as shown below.
 parameters:
     # Resolution of NuPIC RandomDistributedScalarEncoder to use
-    encoder_resolution: 25
+    encoder_resolution: 1
 
     # Time sleep between requests when it's in online learning
     seconds_per_request: 60
 
-    # [Optional] Which transformation to apply to data before feeding it to NuPIC
-    # We have two admissably transformations
-    # * moving_average: smooth data by averaging it over a given window
-    # * scale: scale data by multiplying it by a given factor
-    transform: scale
-
-    # [Optional] How many points to use for data smoothing when doing averaging
+    # How many points to use for data smoothing when doing averaging
     moving_average_window: 1
 
-    # [Optional] Factor to multiply each data value when using scale transform
+    # Factor to multiply each data value when using scale transform
     scaling_factor: 1
 
-    # [Optional] Thresholds that triggers a POST to the webhook (if supplied)
-    likelihood_threshold: 1.0
-    anomaly_threshold: 1.0
+    # Thresholds that triggers a POST to the webhook (if supplied)
+    likelihood_threshold: None
+    anomaly_threshold: None
 
 # [Optional ] Domain in which you'll be running the service.
 # This will be used to create links to anomalous monitors when reporting anomalies.

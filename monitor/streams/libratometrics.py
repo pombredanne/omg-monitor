@@ -45,9 +45,6 @@ class LibratometricsStream(BaseStream):
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.INFO)
 
-        self.logger.info("=== Settings ===")
-        self.logger.info("Transform: %s", self.transform)
-
     def historic_data(self):
         """ Return a batch of data to be used at training """
 

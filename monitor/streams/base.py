@@ -33,15 +33,10 @@ class BaseStream(object):
         # Time to keep watch for new values
         self.servertime = 0
 
-        self.scaling_factor = config['scaling_factor']
-        self.transform = config['transform']
-
-        # If no transform is given, default to scale with factor 1 (= do nothing!)
-        if self.transform not in ['moving_average', 'scale']:
-            self.transform = 'scale'
-            self.scaling_factor = 1
-
-        moving_average_window = config['moving_average_window']
+        # By default, scaling_factor = 1 and moving_average_window = 1,
+        # which means no transformation
+        self.scaling_factor = config.get('scaling_factor', 1)
+        moving_average_window = config.get('moving_average_window', 1)
 
         # Deque to keep history of input values for smoothing
         self.history = deque([0.0] * moving_average_window, maxlen=moving_average_window)
@@ -78,18 +73,16 @@ class BaseStream(object):
         pass
 
     def _transform(self):
-        if self.transform == "moving_average":
-            return self._moving_average()
-        if self.transform == "scale":
-            return self._scale()
+        """ Used to transform data before feeding it to NuPIC. """
+        # Perform average, if want
+        averaged = self._moving_average()
+
+        # Perform scaling, if want
+        averaged_scaled = averaged*self.scaling_factor
+
+        return averaged_scaled
 
     def _moving_average(self):
         """ Used to smooth input data. """
 
         return sum(self.history)/len(self.history) if len(self.history) > 0 else 0.0
-
-
-    def _scale(self):
-        """ Used to scale input data. """
-
-        return self.history[-1]*self.scaling_factor

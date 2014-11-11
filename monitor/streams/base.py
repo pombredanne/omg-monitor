@@ -15,12 +15,16 @@ class BaseStream(object):
 
     @abc.abstractproperty
     def  value_label(self):
-        """ Label of the value being streamed """
+        """ Label of the value being streamed.
+            Examples: CPU Utilization, Response Time, Power Consumption.
+        """
         pass
 
     @abc.abstractproperty
     def  value_unit(self):
-        """ Unit of the value being streamed """
+        """ Unit of the value being streamed.
+            Examples: %, ms, MW.
+        """
         pass
 
     def __init__(self, config):

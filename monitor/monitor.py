@@ -156,7 +156,7 @@ class Monitor(object):
                           'model_input': {'time': model_input['time'].isoformat(),
                                           'value': model_input['raw_value']}}
                 self._send_post(report)
-                was_alerted
+
         # Return anomalous state
         return anomalous
 

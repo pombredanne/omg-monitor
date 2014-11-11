@@ -11,6 +11,8 @@ Currently we support the following streams for input:
 * [Librato]: Learn from any AWS EC2 metric (possibly any arbitrary metric will work)
 * Dynamic: Push in any timeseries data via JSON and HTTP
 
+More detailed information can be found in our [Wiki].
+
 ## Usage
 
 ### Configuration files
@@ -140,6 +142,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ```
+[Wiki]:https://github.com/cloudwalkio/omg-monitor/wiki
 [NuPIC]:https://github.com/numenta/nupic
 [Docker]:https://www.docker.io/
 [Pingdom]:https://www.pingdom.com/

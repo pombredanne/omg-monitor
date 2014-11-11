@@ -116,7 +116,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         postVars = s.rfile.read(varLen)
         req = json.loads(postVars)
         monitor = get_monitor(req['check_id'], req.get('config', {}))
-        model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value']}
+        model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value'], 'raw_value': req['value']}
         if monitor._update(model_input, True):
             res = "CRITICAL"
         else:

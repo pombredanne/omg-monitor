@@ -142,7 +142,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ```
-[Wiki]:https://github.com/cloudwalkio/omg-monitor/wiki
+[Wiki]:https://github.com/cloudwalkio/omg-monitor/wiki/Overview
 [NuPIC]:https://github.com/numenta/nupic
 [Docker]:https://www.docker.io/
 [Pingdom]:https://www.pingdom.com/

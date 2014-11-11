@@ -92,18 +92,25 @@ As this all runs in the one process, this is slightly more memory efficient.
 #### Another concrete example:
 
 If you run the command `make rebuild`, you will have an input endpoint listening on port 8080.
+The service should start in `localhost`, unless your Docker uses other host.
 
 To push in data:
 
 ```
-curl --data '{"monitor_id": "monitor_id_here", "time":EPOCH_TIME, "value":42}' http://DOCKER_HOST:8080
+curl --data '{"check_id": "check_id_here", "time":1, "value":42}' http://localhost:8080
+curl --data '{"check_id": "check_id_here", "time":2, "value":41}' http://localhost:8080
+curl --data '{"check_id": "check_id_here", "time":3, "value":42}' http://localhost:8080
 ```
-The first time it sees that `monitor_id`, a monitor instance will be created.
+The first time it sees that `check_id`, a monitor instance will be created.
 The time/value pair is the time-series that is used as input.
 
 The response will be a JSON object saying if the monitor is currently `CRITICAL` or `OK`.
-You can of course access the client in the browser (in port `80`) to find out more information,
+You can of course access the client in the browser (in port `5000`) to find out more information,
 including plots of the data and its anomaly score.
+
+You should notice we don't have any predictions/anomaly scores for the first point, but for the
+second and beyond we start to compute anomaly scores, so after you run the previous three
+lines, you should see a plot with just two points.
 
 If you want to pass in non default options (e.g. resolution), add a config map:
 `"config": {"name": "yeah"}` to the data you are inputting. Parameters `resolution`, `webhook`, `anomaly_threshold`, `likelihood_threshold` are the

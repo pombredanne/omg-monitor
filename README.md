@@ -123,6 +123,14 @@ In the [examples/] directory are some helper scripts to test out this feature.
 
 When posting anomalies to Slack, we make use of the icon [Analytics chart on a monitor screen](http://www.flaticon.com/free-icon/analytics-chart-on-a-monitor-screen_35943) made by [Freepik](http://www.freepik.com) from [www.flaticon.com](http://www.flaticon.com) licensed under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/).
 
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Added some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
+
 ## License
 ```
 OMG Monitor

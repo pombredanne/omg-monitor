@@ -42,26 +42,90 @@ def validate(config):
     if 'credentials' not in keys:
         message = message + 'Credentials not specfied.\n'
 
-    if 'parameters' not in keys:
-        message = message + 'Parameters not specfied.\n'
-    else:
-        if 'encoder_resolution' not in config['parameters'].keys():
-            message = message + 'Encoder resolution not specfied.\n'
-        elif not isinstance(config['parameters']['encoder_resolution'], (int, long)):
-            message = message + 'Encoder resolution should be an integer.\n'
-
-        if 'seconds_per_request' not in config['parameters'].keys():
-            message = message + 'Seconds per request not specfied.\n'
-        elif not isinstance(config['parameters']['seconds_per_request'], (int, long)):
-            message = message + 'Seconds per request should be an integer.\n'
-
+    if 'parameters' in keys:
+        if 'encoder_resolution' in config['parameters'].keys():
+            if not isinstance(config['parameters']['encoder_resolution'], (int, long)):
+                message = message + 'Encoder resolution should be an integer.\n'
+        if 'seconds_per_request' in config['parameters'].keys():
+            if not isinstance(config['parameters']['seconds_per_request'], (int, long)):
+                message = message + 'Seconds per request should be an integer.\n'
+        if 'moving_average_window' in config['parameters'].keys():
+            if not isinstance(config['parameters']['moving_average_window'], (int, long)):
+                message = message + 'Moving average window should be an integer.\n'
+        if 'scaling_factor' in config['parameters'].keys():
+            if not isinstance(config['parameters']['scaling_factor'], (float, int, long)):
+                message = message + 'Scaling factor window should be a number.\n'
+        if 'likelihood_threshold' in config['parameters'].keys():
+            if not isinstance(config['parameters']['likelihood_threshold'], (float, int, long)):
+                message = message + 'Likelihood threshold should be a number between 0 and 1.\n'
+            elif config['parameters']['likelihood_threshold'] < 0 or config['parameters']['likelihood_threshold'] > 1:
+                message = message + 'Likelihood threshold should be a number between 0 and 1.\n'
+        if 'anomaly_threshold' in config['parameters'].keys():
+            if not isinstance(config['parameters']['anomaly_threshold'], (float, int, long)):
+                message = message + 'Anomaly threshold should be a number between 0 and 1.\n'
+            elif config['parameters']['anomaly_threshold'] < 0 or config['parameters']['likelihood_threshold'] > 1:
+                message = message + 'Anomaly threshold should be a number between 0 and 1.\n'
     if 'monitors' in keys:
         if not isinstance(config['monitors'], list):
             message = message + 'Monitors should be a list of ids.\n'
 
     return message
 
-def run(stream_config, monitor_config):
+def extract_monitor_config(config):
+    """ Extract Monitor config from global config file.
+        Output: * monitor_config: dictionary with Monitor configurations
+    """
+    if 'parameters' not in config.keys():
+        config['parameters'] = {}
+
+    # Get configurations to pass to monitor class
+    monitor_config = {'resolution': int(config['parameters'].get('encoder_resolution', 1)),
+                      'seconds_per_request': int(config['parameters'].get('seconds_per_request', 60)),
+                      'webhook': config.get('webhook', None),
+                      'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
+                      'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
+                      'domain': config.get('domain', 'localhost')}
+    return monitor_config
+
+def extract_stream_config(config):
+    """ Extract Stream config from global config file. Also checks for Stream
+    availability.
+        Output: * stream_config: dictionary with Stream configurations
+                * streams: list of available streams
+                * StreamClass: stream class being used
+    """
+    if 'parameters' not in config.keys():
+        config['parameters'] = {}
+    # Set credentials dict
+    credentials = {}
+    for name, value in config['credentials'].items():
+        credentials[name] = value
+
+    # Get stream type and set StreamClass from it
+    stream_type= config['stream']['source']
+
+    stream_module = importlib.import_module("streams.%s" % stream_type)
+    StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
+
+    # Set metric
+    metric = config['stream'].get('metric', None)
+
+    # Get all streams available for StreamClass
+    data = {'credentials': credentials, 'metric': metric}
+    try:
+        streams = StreamClass.available_streams(data)
+    except Exception, e:
+        logger.error('Could not connect to stream.', exc_info=True)
+        sys.exit(0)
+
+    # Get base stream configurations
+    stream_config = {'metric': metric,
+                     'moving_average_window': int(config['parameters'].get('moving_average_window', 1)),
+                     'scaling_factor': float(config['parameters'].get('scaling_factor', 1)),
+                     'credentials': credentials}
+    return stream_config, streams, StreamClass
+
+def run(StreamClass, stream_config, monitor_config):
     """ Instantiate a monitor for StreamClass using given configurations """
 
     # Instantiate monitor
@@ -105,43 +169,12 @@ if __name__ == "__main__":
             continue
         logger.info('Configuration file validated.')
 
-        # Get stream type and set StreamClass from it
-        stream_type= config['stream']['source']
-
-        stream_module = importlib.import_module("streams.%s" % stream_type)
-        StreamClass = getattr(stream_module, "%sStream" % stream_type.title())
-
-        # Set credentials dict
-        credentials = {}
-        for name, value in config['credentials'].items():
-            credentials[name] = value
-
-        # Set metric
-        metric = config['stream'].get('metric', None)
-
-        # Get all streams available for StreamClass
-        data = {'credentials': credentials, 'metric': metric}
-        try:
-            streams = StreamClass.available_streams(data)
-        except Exception, e:
-            logger.error('Could not connect to stream.', exc_info=True)
-            sys.exit(0)
-
         # Get configurations to pass to monitor class
-        monitor_config = {'resolution': int(config['parameters']['encoder_resolution']),
-                          'seconds_per_request': int(config['parameters']['seconds_per_request']),
-                          'webhook': config.get('webhook', None),
-                          'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
-                          'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
-                          'domain': config.get('domain', 'localhost')}
+        monitor_config = extract_monitor_config(config)
+        stream_config, streams, StreamClass = extract_stream_config(config)
 
         logger.info("Monitor configuration: %s", monitor_config)
-
-        # Get other stream parameters
-        moving_average_window = int(config['parameters'].get('moving_average_window', 1))
-        scaling_factor = float(config['parameters'].get('scaling_factor', 1))
-        transform = config['parameters'].get('transform', 'scale')
-        stream_metric = config['stream'].get('metric', None)
+        logger.info("Base stream configuration: % s", stream_config)
 
         # If don't have specfied monitors, run everything!
         monitors_ids = config.get('monitors', None)
@@ -153,17 +186,12 @@ if __name__ == "__main__":
                 stream_id = stream['id']
                 stream_name = stream['name']
 
-                # Configuration to pass to stream class
-                stream_config = {'id': stream_id,
-                                 'name': stream_name,
-                                 'metric': stream_metric,
-                                 'moving_average_window': moving_average_window,
-                                 'scaling_factor': scaling_factor,
-                                 'transform': transform,
-                                 'credentials': credentials}
+                # Set stream identification
+                stream_config['id'] = stream_id
+                stream_config['name'] = stream_name
 
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
         else: # Run streams passed
             # Start the monitors sessions
@@ -180,17 +208,12 @@ if __name__ == "__main__":
                     logger.warn("Stream ID %s doesn't exist. Skipping this one.", stream_id)
                     continue
 
-                # Configuration to pass to stream class
-                stream_config = {'id': stream_id,
-                                 'name': stream_name,
-                                 'metric': stream_metric,
-                                 'moving_average_window': moving_average_window,
-                                 'scaling_factor': scaling_factor,
-                                 'transform': transform,
-                                 'credentials': credentials}
+                # Set stream identification
+                stream_config['id'] = stream_id
+                stream_config['name'] = stream_name
 
                 # Start job
-                jobs_list.append(multiprocessing.Process(target=run, args=(stream_config, monitor_config)))
+                jobs_list.append(multiprocessing.Process(target=run, args=(StreamClass, stream_config, monitor_config)))
                 jobs_list[len(jobs_list) - 1].start()
     # Join jobs
     for job in jobs_list:

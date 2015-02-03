@@ -114,7 +114,7 @@ def extract_stream_config(config):
     data = {'credentials': credentials, 'metric': metric}
     try:
         streams = StreamClass.available_streams(data)
-    except Exception, e:
+    except Exception:
         logger.error('Could not connect to stream.', exc_info=True)
         sys.exit(0)
 

@@ -1,4 +1,4 @@
-FROM cloudwalk/nupic
+FROM numenta/nupic
 
 MAINTAINER Allan Costa <allan@cloudwalk.io>
 

@@ -1,7 +1,6 @@
 # Swarming for parameters
 
-**Warning:** *This is only an example of how you can create a Pingdom dataset and swarm it to get best parameters to give NuPIC. We don't use it often,
-as we have some reasonably parameters hardcoded in the main application. Those parameters was obtained through swarming, though.*
+**Warning:** *This is only an example of how you can create a Pingdom dataset and swarm it to get best parameters to give NuPIC. It's outdated (now we can swarm programmaticaly with NuPIC) and we don't use it anymore, as we have some reasonably parameters hardcoded in the main application. Those parameters were obtained through swarming, though.*
 
 With NuPIC we can [swarm] the space of parameters to find better models. I will keep here the files I used to swarm the parameters currently used. You can see the parameters in the file [../monitor/model_params_monitor.py].
 

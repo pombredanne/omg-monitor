@@ -9,4 +9,4 @@ rebuild: build run
 
 # Need to shell in to dig around? here you go.
 shell: build
-	docker run -it -e DYNAMIC=true -e -p 8080:8080 -p 5000:5000 --entrypoint '/bin/bash' cloudwalk/monitor
+	docker run -it -e DYNAMIC=true -p 8080:8080 -p 5000:5000 --entrypoint '/bin/bash' cloudwalk/monitor

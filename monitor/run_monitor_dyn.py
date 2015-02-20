@@ -8,6 +8,8 @@ import SocketServer
 import BaseHTTPServer
 import json
 from datetime import datetime
+import time
+import threading
 
 # Use logging
 logger = logging.getLogger(__name__)
@@ -29,16 +31,39 @@ logger.setLevel(logging.INFO)
 # the current configured monitors - each one has a chunk of CLA memory
 current_monitors = {}
 
+# track the last time something was seen
+last_seen_input = {}
+
+
 def get_monitor(check_id, config):
     """ get or create a new monitor with optional config """
+    last_seen_input[check_id] = time.time()
 
     if check_id not in current_monitors:
         current_monitors[check_id] = new_monitor(check_id, config)
     return current_monitors[check_id]
 
+def garbage_collect():
+    """ garbage collect checks that havent' seen action in a while to save memory """
+    for check_id in last_seen_input:
+        if (time.time() - last_seen_input[check_id] > 10):
+          logger.info("Garbage collecting: %s", check_id)
+          remove_monitor(check_id)
+
+def gc_task():
+    """ schedule a regular clean out of garbage """
+    def do_gc():
+        while True: 
+          garbage_collect()
+          time.sleep(10)
+    #do some stuff
+    worker = threading.Thread(target=do_gc, args=[])
+    worker.start()
+
 def remove_monitor(check_id):
     """ save some memory by clearing monitor - stopping nupic as well as redis storage """
 
+    del last_seen_input[check_id]
     mon = current_monitors[check_id]
     mon.delete()
     del current_monitors[check_id]
@@ -140,4 +165,5 @@ if __name__ == "__main__":
     PORT=8080
     httpd = SocketServer.TCPServer(("", PORT), MyHandler)
     print "serving at port", PORT
+    gc_task()
     httpd.serve_forever()

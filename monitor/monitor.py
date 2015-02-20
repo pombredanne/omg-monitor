@@ -158,7 +158,7 @@ class Monitor(object):
                 self._send_post(report)
 
         # Return anomalous state
-        return anomalous
+        return {"likelihood" : likelihood,  "anomalous" : anomalous, "anomalyScore" : anomaly_score}
 
     def delete(self):
         """ Remove this monitor from redis """

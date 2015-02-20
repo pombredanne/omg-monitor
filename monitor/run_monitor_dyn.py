@@ -55,7 +55,7 @@ def gc_task():
     def do_gc():
         while True: 
           garbage_collect()
-          time.sleep(10)
+          time.sleep(10000)
     #do some stuff
     worker = threading.Thread(target=do_gc, args=[])
     worker.start()
@@ -142,14 +142,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         req = json.loads(postVars)
         monitor = get_monitor(req['check_id'], req.get('config', {}))
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value'], 'raw_value': req['value']}
-        if monitor._update(model_input, True):
-            res = "CRITICAL"
-        else:
-            res = "OK"
+        res = monitor._update(model_input, True)
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "%s"}\n' % res)
+        s.wfile.write('{"result": "%s"}\n' % json.dumps(res))
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)

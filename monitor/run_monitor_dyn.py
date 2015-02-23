@@ -146,7 +146,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "%s"}\n' % json.dumps(res))
+        s.wfile.write(json.dumps(res))
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)

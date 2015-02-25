@@ -4,4 +4,4 @@
 # Usage: ./currente_time_data localhost 153
 NOW=$(date +"%s")
 DOCKER=$1
-curl --data "{\"check_id\": \"mic3\", \"time\":$NOW, \"value\":$2, \"config\" : {\"resolution\" : 1}}" http://$DOCKER:8080
+curl --data "{\"check_id\": \"mic3\", \"time\":$NOW, \"value\":$2, \"config\" : {\"resolution\" : 1, \"label\" : \"this thing\"}}" http://$DOCKER:8080

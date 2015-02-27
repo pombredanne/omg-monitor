@@ -8,6 +8,8 @@ import SocketServer
 import BaseHTTPServer
 import json
 from datetime import datetime
+import time
+import threading
 
 # Use logging
 logger = logging.getLogger(__name__)
@@ -29,16 +31,37 @@ logger.setLevel(logging.INFO)
 # the current configured monitors - each one has a chunk of CLA memory
 current_monitors = {}
 
+# track the last time something was seen
+last_seen_input = {}
+
 def get_monitor(check_id, config):
     """ get or create a new monitor with optional config """
+    last_seen_input[check_id] = time.time()
 
     if check_id not in current_monitors:
         current_monitors[check_id] = new_monitor(check_id, config)
     return current_monitors[check_id]
 
+def garbage_collect(timeout):
+    """ garbage collect checks that havent' seen action in a while to save memory """
+    for check_id in last_seen_input:
+        if (time.time() - last_seen_input[check_id] > timeout):
+            logger.info("Garbage collecting: %s", check_id)
+            remove_monitor(check_id)
+
+def gc_task():
+    """ schedule a regular clean out of garbage - if not seen for an hour will clean it out """
+    def do_gc(cleanup_interval=60, timeout=3600):
+        while True: 
+            garbage_collect(timeout)
+            time.sleep(cleanup_interval)
+    worker = threading.Thread(target=do_gc, args=[])
+    worker.start()
+
 def remove_monitor(check_id):
     """ save some memory by clearing monitor - stopping nupic as well as redis storage """
 
+    del last_seen_input[check_id]
     mon = current_monitors[check_id]
     mon.delete()
     del current_monitors[check_id]
@@ -117,14 +140,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         req = json.loads(postVars)
         monitor = get_monitor(req['check_id'], req.get('config', {}))
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value'], 'raw_value': req['value']}
-        if monitor._update(model_input, True):
-            res = "CRITICAL"
-        else:
-            res = "OK"
+        res = monitor._update(model_input, True)
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
-        s.wfile.write('{"result": "%s"}\n' % res)
+        s.wfile.write(json.dumps(res))
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
@@ -140,4 +160,5 @@ if __name__ == "__main__":
     PORT=8080
     httpd = SocketServer.TCPServer(("", PORT), MyHandler)
     print "serving at port", PORT
+    gc_task()
     httpd.serve_forever()

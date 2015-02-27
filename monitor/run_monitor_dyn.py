@@ -46,15 +46,15 @@ def garbage_collect(timeout):
     """ garbage collect checks that havent' seen action in a while to save memory """
     for check_id in last_seen_input:
         if (time.time() - last_seen_input[check_id] > timeout):
-           logger.info("Garbage collecting: %s", check_id)
-           remove_monitor(check_id)
+            logger.info("Garbage collecting: %s", check_id)
+            remove_monitor(check_id)
 
 def gc_task():
     """ schedule a regular clean out of garbage - if not seen for an hour will clean it out """
     def do_gc(cleanup_interval=60, timeout=3600):
         while True: 
-           garbage_collect(timeout)
-           time.sleep(cleanup_interval)
+            garbage_collect(timeout)
+            time.sleep(cleanup_interval)
     worker = threading.Thread(target=do_gc, args=[])
     worker.start()
 

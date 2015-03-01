@@ -22,7 +22,6 @@ RUN apt-get install -y supervisor
 ENV GOPATH /home/docker/go
 ENV PATH /home/docker/redis-2.6.16/src:/usr/local/go/bin:$PATH
 
-
 # Install Python dependencies (others than NuPIC)
 ADD requirements.txt /home/docker/omg-monitor/requirements.txt
 WORKDIR /home/docker/omg-monitor/
@@ -40,16 +39,10 @@ RUN \
     go build;
 #RUN
 
-
-# Install Python dependencies (others than NuPIC)
-RUN pip install -r requirements.txt
-
-
 # Copy omg-monitor directory
 ADD startup.sh /home/docker/omg-monitor/startup.sh
 ADD monitor/ /home/docker/omg-monitor/monitor
 ADD config/ /home/docker/omg-monitor/config
-
 
 EXPOSE 5000
 

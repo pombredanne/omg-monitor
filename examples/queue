@@ -1,0 +1,12 @@
+#!/bin/sh
+
+DOCKER=$1
+for i in `seq 1 10000`;
+do
+  for j in `seq 1 2`;
+  do
+    ./current_time_data $DOCKER $j        
+    sleep 1
+    echo ""
+  done         
+done 

@@ -75,14 +75,14 @@ class Monitor(object):
         data = self.stream.historic_data()
 
         for model_input in data:
-            self._update(model_input, False) # Don't post anomalies in training
+            self.update(model_input, False) # Don't post anomalies in training
 
     def loop(self):
         while True:
             data = self.stream.new_data()
 
             for model_input in data:
-                self._update(model_input, True) # Post anomalies when online
+                self.update(model_input, True) # Post anomalies when online
 
             sleep(self.seconds_per_request)
 

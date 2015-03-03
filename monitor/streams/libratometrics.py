@@ -125,7 +125,7 @@ class LibratometricsStream(BaseStream):
         instances_list = [i for i in metric.measurements]
 
         # Get sources display names
-        sources = libr._mexe('sources')['sources']
+        sources = libr._mexe('sources')['sources'] # pylint: disable=W0212
         names = {}
         for s in sources:
             if s['display_name'] is not None:

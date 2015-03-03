@@ -35,7 +35,8 @@ current_monitors = {}
 last_seen_input = {}
 
 def get_monitor(check_id, config):
-    """ get or create a new monitor with optional config """
+    """ Get or create a new monitor with optional config """
+
     last_seen_input[check_id] = time.time()
 
     if check_id not in current_monitors:
@@ -43,23 +44,26 @@ def get_monitor(check_id, config):
     return current_monitors[check_id]
 
 def garbage_collect(timeout):
-    """ garbage collect checks that havent' seen action in a while to save memory """
+    """ Garbage collect checks that havent' seen action in a while to save memory """
+
     for check_id in last_seen_input:
         if (time.time() - last_seen_input[check_id] > timeout):
             logger.info("Garbage collecting: %s", check_id)
             remove_monitor(check_id)
 
 def gc_task():
-    """ schedule a regular clean out of garbage - if not seen for an hour will clean it out """
+    """ Schedule a regular clean out of garbage - if not seen for an hour will clean it out """
+
     def do_gc(cleanup_interval=60, timeout=3600):
-        while True: 
+        while True:
             garbage_collect(timeout)
             time.sleep(cleanup_interval)
+
     worker = threading.Thread(target=do_gc, args=[])
     worker.start()
 
 def remove_monitor(check_id):
-    """ save some memory by clearing monitor - stopping nupic as well as redis storage """
+    """ Save some memory by clearing monitor - stopping nupic as well as redis storage """
 
     del last_seen_input[check_id]
     mon = current_monitors[check_id]
@@ -84,7 +88,8 @@ class Dynamic(object):
         self.label = config['label']
 
 def new_monitor(check_id, config):
-
+    """ Return a new monitor with given check_id and config """
+    
     # default config for any new checks
     # overridable by the first input to this check stream
     monitor_config = {'resolution': 2,
@@ -118,6 +123,7 @@ def new_monitor(check_id, config):
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """ This is the http entrypoint for json data - streams created on the fly """
+
     def do_GET(s):
         s.send_response(200)
         s.send_header("Content-type", "text/html")
@@ -134,17 +140,19 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         s.wfile.write(usage)
         s.wfile.write("</body></html>")
+
     def do_POST(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
         req = json.loads(postVars)
         monitor = get_monitor(req['check_id'], req.get('config', {}))
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value'], 'raw_value': req['value']}
-        res = monitor._update(model_input, True)
+        res = monitor.update(model_input, True)
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()
         s.wfile.write(json.dumps(res))
+
     def do_DELETE(s):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
@@ -157,8 +165,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.wfile.write('{"result": "OK"}\n')
 
 if __name__ == "__main__":
-    PORT=8080
-    httpd = SocketServer.TCPServer(("", PORT), MyHandler)
-    print "serving at port", PORT
+    port = 8080
+    httpd = SocketServer.TCPServer(("", port), MyHandler)
+    logger.info("Serving at port %d", port)
     gc_task()
     httpd.serve_forever()

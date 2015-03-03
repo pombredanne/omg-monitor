@@ -61,7 +61,7 @@ class PingdomStream(BaseStream):
 
         historic_data = []
         for model_input in results:
-             # If dont' have response time is because it's not up, so set it to a large number
+            # If dont' have response time is because it's not up, so set it to a large number
             if 'responsetime' not in model_input:
                 model_input['responsetime'] = self.timeout_default
 

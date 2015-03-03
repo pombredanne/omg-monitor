@@ -86,7 +86,7 @@ class Monitor(object):
 
             sleep(self.seconds_per_request)
 
-    def _update(self, model_input, is_to_post):
+    def update(self, model_input, is_to_post):
         # Pass the input to the model
         result = self.model.run(model_input)
 

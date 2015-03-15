@@ -103,6 +103,9 @@ class Monitor(object):
         likelihood = self.anomalyLikelihood.anomalyProbability(model_input['value'],
                                                                anomaly_score,
                                                                model_input['time'])
+        
+        # Get the preducted value for reporting                                                       
+        predicted = result.inferences['multiStepBestPredictions'][1]                                                       
 
         # Get timestamp from datetime
         timestamp = calendar.timegm(model_input['time'].timetuple())
@@ -120,7 +123,7 @@ class Monitor(object):
                               '%s,%.5f,%.5f,%.5f,%.5f,%.5f' % (timestamp,
                                                           model_input['raw_value'],
                                                           result.rawInput['value'],
-                                                          result.inferences['multiStepBestPredictions'][1],
+                                                          predicted,
                                                           anomaly_score,
                                                           likelihood))
                 max_items = 10000
@@ -158,7 +161,7 @@ class Monitor(object):
                 self._send_post(report)
 
         # Return anomalous state
-        return {"likelihood" : likelihood,  "anomalous" : anomalous, "anomalyScore" : anomaly_score}
+        return {"likelihood" : likelihood,  "anomalous" : anomalous, "anomalyScore" : anomaly_score, "predicted" : predicted}
 
     def delete(self):
         """ Remove this monitor from redis """

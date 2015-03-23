@@ -45,11 +45,16 @@ def get_monitor(check_id, config):
 
 def garbage_collect(timeout):
     """ Garbage collect checks that havent' seen action in a while to save memory """
-
+    
+    to_remove = []
     for check_id in last_seen_input:
-        if (time.time() - last_seen_input[check_id] > timeout):
-            logger.info("Garbage collecting: %s", check_id)
-            remove_monitor(check_id)
+        if (time.time() - last_seen_input[check_id] > timeout):            
+            to_remove.append(check_id)
+            
+    for check_id in to_remove: 
+        logger.info("Garbage collecting: %s", check_id)
+        remove_monitor(check_id)            
+            
 
 def gc_task():
     """ Schedule a regular clean out of garbage - if not seen for an hour will clean it out """

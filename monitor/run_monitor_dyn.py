@@ -8,8 +8,10 @@ import SocketServer
 import BaseHTTPServer
 import json
 from datetime import datetime
+from collections import deque
 import time
 import threading
+
 
 # Use logging
 logger = logging.getLogger(__name__)
@@ -34,6 +36,9 @@ current_monitors = {}
 # track the last time something was seen
 last_seen_input = {}
 
+# keep a list for moving average purposes
+moving_averages = {}
+
 def get_monitor(check_id, config):
     """ Get or create a new monitor with optional config """
 
@@ -41,7 +46,8 @@ def get_monitor(check_id, config):
 
     if check_id not in current_monitors:
         current_monitors[check_id] = new_monitor(check_id, config)
-    return current_monitors[check_id]
+        moving_averages[check_id] = deque([0.0] * 10, maxlen=10)
+    return (current_monitors[check_id], moving_averages[check_id])
 
 def garbage_collect(timeout):
     """ Garbage collect checks that havent' seen action in a while to save memory """
@@ -71,6 +77,7 @@ def remove_monitor(check_id):
     """ Save some memory by clearing monitor - stopping nupic as well as redis storage """
 
     del last_seen_input[check_id]
+    del moving_averages[check_id]
     mon = current_monitors[check_id]
     mon.delete()
     del current_monitors[check_id]
@@ -97,7 +104,7 @@ def new_monitor(check_id, config):
     
     # default config for any new checks
     # overridable by the first input to this check stream
-    monitor_config = {'resolution': 2,
+    monitor_config = {'resolution': 10,
                       'seconds_per_request': 60,
                       'webhook': None,
                       'likelihood_threshold': None,
@@ -150,8 +157,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         varLen = int(s.headers['Content-Length'])
         postVars = s.rfile.read(varLen)
         req = json.loads(postVars)
-        monitor = get_monitor(req['check_id'], req.get('config', {}))
-        model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': req['value'], 'raw_value': req['value']}
+        (monitor, averages) = get_monitor(req['check_id'], req.get('config', {}))
+        averages.appendleft(req['value'])
+        smoothValue = sum(averages)/len(averages)
+        model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': smoothValue, 'raw_value': smoothValue}
         res = monitor.update(model_input, True)
         s.send_response(200)
         s.send_header("Content-type", "application/json")

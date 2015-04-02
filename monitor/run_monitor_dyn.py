@@ -46,7 +46,8 @@ def get_monitor(check_id, config):
 
     if check_id not in current_monitors:
         current_monitors[check_id] = new_monitor(check_id, config)
-        moving_averages[check_id] = deque([0.0] * 10, maxlen=10)
+        moving_average_window = int(config.get('moving_average_window', 10))
+        moving_averages[check_id] = deque([0.0] * moving_average_window, maxlen=moving_average_window)        
     return (current_monitors[check_id], moving_averages[check_id])
 
 def garbage_collect(timeout):

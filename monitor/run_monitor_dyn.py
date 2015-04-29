@@ -163,6 +163,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         smoothValue = sum(averages)/len(averages)
         model_input = {'time': datetime.utcfromtimestamp(req['time']), 'value': smoothValue, 'raw_value': smoothValue}
         res = monitor.update(model_input, True)
+        res['current_value'] = smoothValue
         s.send_response(200)
         s.send_header("Content-type", "application/json")
         s.end_headers()

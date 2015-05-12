@@ -84,7 +84,8 @@ def extract_monitor_config(config):
                       'webhook': config.get('webhook', None),
                       'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
                       'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
-                      'domain': config.get('domain', 'localhost')}
+                      'domain': config.get('domain', 'localhost'),
+                      'nupic_model_params': config.get('nupic_model_params', {})}
     return monitor_config
 
 def extract_stream_config(config):

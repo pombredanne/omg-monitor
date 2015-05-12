@@ -11,6 +11,17 @@ import calendar
 import os
 import requests
 import json
+import collections
+
+def update_dict(d, u):
+    """ Recursively updates dict d with keys in dict u."""
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = update_dict(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +32,15 @@ class Monitor(object):
 
         # Instantiate NuPIC model
         model_params = base_model_params.MODEL_PARAMS
+
+        # Set resolution
         model_params['modelParams']['sensorParams']['encoders']['value']['resolution'] = config['resolution']
 
-        self.model = ModelFactory.create(model_params)
+        # Override other Nupic parameters:
+        model_params['modelParams'] = update_dict(model_params['modelParams'], config['nupic_model_params'])
 
+        # Create model and enable inference on it
+        self.model = ModelFactory.create(model_params)
         self.model.enableInference({'predictedField': 'value'})
 
         # The shifter is used to bring the predictions to the actual time frame
@@ -103,9 +119,9 @@ class Monitor(object):
         likelihood = self.anomalyLikelihood.anomalyProbability(model_input['value'],
                                                                anomaly_score,
                                                                model_input['time'])
-        
-        # Get the preducted value for reporting                                                       
-        predicted = result.inferences['multiStepBestPredictions'][1]                                                       
+
+        # Get the predicted value for reporting
+        predicted = result.inferences['multiStepBestPredictions'][1]
 
         # Get timestamp from datetime
         timestamp = calendar.timegm(model_input['time'].timetuple())

@@ -27,6 +27,14 @@ parameters:
     likelihood_threshold: None
     anomaly_threshold: None
 
+# [Optional] You can override modelParams of NuPIC here. Only do that if you know
+# what you're doing! Below we have some examples (notice NuPIC uses camelCase):
+nupic_model_params:
+    spParams:
+        maxBoost: 2.0
+    tpParams:
+        activationThreshold: 16
+
 # [Optional ] Domain in which you'll be running the service.
 # This will be used to create links to anomalous monitors when reporting anomalies.
 # If not specified we'll use "localhost".

@@ -110,7 +110,8 @@ def new_monitor(check_id, config):
                       'webhook': None,
                       'likelihood_threshold': None,
                       'anomaly_threshold': 0.9,
-                      'domain': 'localhost'}
+                      'domain': 'localhost',
+                      'nupic_model_params': {'spParams': {'maxBoost': 1.1}}}
     monitor_config.update(config)
 
     logger.info("Monitor configuration: %s", monitor_config)

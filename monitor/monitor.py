@@ -77,6 +77,7 @@ class Monitor(object):
         self.logger.info("Webhook: %s", self.webhook)
         self.logger.info("Domain: %s", self.domain)
         self.logger.info("Seconds per request: %d", self.seconds_per_request)
+        self.logger.info("Model params: %s", model_params)
 
         # Write metadata to Redis
         try:

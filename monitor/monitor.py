@@ -59,6 +59,7 @@ class Monitor(object):
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
         self.domain = config['domain']
+        self.protocol = config['protocol']
         self.alert = False # Toogle when we get above threshold
 
         # Setup logging
@@ -191,20 +192,24 @@ class Monitor(object):
     def _send_post(self, report):
         """ Send HTTP POST notification. """
 
+        chart_url = '%s://%s?id=%s' % (self.protocol, self.domain, self.stream.id)
+        if os.getenv('SERVER_TOKEN') != '':
+            chart_url += '&access_token=%s' % os.getenv('SERVER_TOKEN')
+
         if "hooks.slack.com" not in self.webhook:
             payload = {'sent_at': datetime.utcnow().isoformat(),
                        'report': report,
                        'monitor': self.stream.name,
                        'source': type(self.stream).__name__,
                        'metric': '%s (%s)' % (self.stream.value_label, self.stream.value_unit),
-                       'chart': 'http://%s?id=%s' % (self.domain, self.stream.id)}
+                       'chart': chart_url}
         else:
             payload = {'username': 'omg-monitor',
                        'icon_url': 'https://rawgithub.com/cloudwalkio/omg-monitor/slack-integration/docs/images/post_icon.png',
                        'text':  'Anomalous state in *%s* from _%s_:' % (self.stream.name, type(self.stream).__name__),
                        'attachments': [{'color': 'warning',
                                         'fields': [{'title': 'Chart',
-                                                    'value':  'http://%s?id=%s' % (self.domain, self.stream.id),
+                                                    'value':  chart_url,
                                                     'short': False},
                                                    {'title': 'Metric',
                                                     'value': self.stream.value_label,

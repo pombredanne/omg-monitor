@@ -85,6 +85,7 @@ def extract_monitor_config(config):
                       'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
                       'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
                       'domain': config.get('domain', 'localhost'),
+                      'protocol': config.get('protocol', 'http'),
                       'nupic_model_params': config.get('nupic_model_params', {})}
     return monitor_config
 

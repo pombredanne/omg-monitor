@@ -35,10 +35,11 @@ nupic_model_params:
     tpParams:
         activationThreshold: 16
 
-# [Optional ] Domain in which you'll be running the service.
+# [Optional ] Domain and protocol in which you'll be running the service.
 # This will be used to create links to anomalous monitors when reporting anomalies.
-# If not specified we'll use "localhost".
+# If not specified we'll use "localhost" as domain and "http" as protocol.
 domain: omg-monitor.ai
+protocol: http
 
 # [Optional]  An endpoint that will receive POST request when something above
 # the defined thresholds is found. We post a JSON with the following structure:

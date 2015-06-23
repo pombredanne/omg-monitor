@@ -47,21 +47,21 @@ def get_monitor(check_id, config):
     if check_id not in current_monitors:
         current_monitors[check_id] = new_monitor(check_id, config)
         moving_average_window = int(config.get('moving_average_window', 10))
-        moving_averages[check_id] = deque([0.0] * moving_average_window, maxlen=moving_average_window)        
+        moving_averages[check_id] = deque([0.0] * moving_average_window, maxlen=moving_average_window)
     return (current_monitors[check_id], moving_averages[check_id])
 
 def garbage_collect(timeout):
     """ Garbage collect checks that havent' seen action in a while to save memory """
-    
+
     to_remove = []
     for check_id in last_seen_input:
-        if (time.time() - last_seen_input[check_id] > timeout):            
+        if (time.time() - last_seen_input[check_id] > timeout):
             to_remove.append(check_id)
-            
-    for check_id in to_remove: 
+
+    for check_id in to_remove:
         logger.info("Garbage collecting: %s", check_id)
-        remove_monitor(check_id)            
-            
+        remove_monitor(check_id)
+
 
 def gc_task():
     """ Schedule a regular clean out of garbage - if not seen for an hour will clean it out """
@@ -102,12 +102,13 @@ class Dynamic(object):
 
 def new_monitor(check_id, config):
     """ Return a new monitor with given check_id and config """
-    
+
     # default config for any new checks
     # overridable by the first input to this check stream
     monitor_config = {'resolution': 10,
                       'seconds_per_request': 60,
                       'webhook': None,
+                      'channel': None,
                       'likelihood_threshold': None,
                       'anomaly_threshold': 0.9,
                       'domain': 'localhost',

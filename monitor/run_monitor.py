@@ -82,6 +82,7 @@ def extract_monitor_config(config):
     monitor_config = {'resolution': int(config['parameters'].get('encoder_resolution', 1)),
                       'seconds_per_request': int(config['parameters'].get('seconds_per_request', 60)),
                       'webhook': config.get('webhook', None),
+                      'channel': config.get('channel', None),
                       'anomaly_threshold': config['parameters'].get('anomaly_threshold', None),
                       'likelihood_threshold': config['parameters'].get('likelihood_threshold', None),
                       'domain': config.get('domain', 'localhost'),
@@ -116,6 +117,8 @@ def extract_stream_config(config):
     data = {'credentials': credentials, 'metric': metric}
     try:
         streams = StreamClass.available_streams(data)
+
+
     except Exception:
         logger.error('Could not connect to stream.', exc_info=True)
         sys.exit(0)

@@ -61,5 +61,10 @@ protocol: http
 #}
 webhook: http://localhost/listening
 
+# [Optional] A Slack channel. If the webhook above is a Slack webhook we will
+# post the anomalies to channel specified here. It defaults to the default channel
+# of the Slack webhook and is not used if the webhook is not from Slack.
+channel: "#monitor"
+
 # [Optional] A list with checks to monitor. If not supplied, we run everything.
 monitors: [123456, 875642]

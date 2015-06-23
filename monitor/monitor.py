@@ -56,6 +56,7 @@ class Monitor(object):
         self.db = redis.Redis('localhost')
         self.seconds_per_request = config['seconds_per_request']
         self.webhook = config['webhook']
+        self.channel = config['channel']
         self.anomaly_threshold = config['anomaly_threshold']
         self.likelihood_threshold = config['likelihood_threshold']
         self.domain = config['domain']
@@ -76,6 +77,7 @@ class Monitor(object):
 
         self.logger.info("=== Settings ===")
         self.logger.info("Webhook: %s", self.webhook)
+        self.logger.info("Channel: %s", self.channel)
         self.logger.info("Domain: %s", self.domain)
         self.logger.info("Seconds per request: %d", self.seconds_per_request)
         self.logger.info("Model params: %s", model_params)
@@ -217,6 +219,8 @@ class Monitor(object):
                                                    {'title': 'Value',
                                                     'value': str(report['model_input']['value']) + ' ' + self.stream.value_unit,
                                                     'short': True}]}]}
+            if self.channel is not None:
+                payload['channel'] = self.channel
 
         headers = {'Content-Type': 'application/json'}
         try:

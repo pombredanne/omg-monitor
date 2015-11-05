@@ -112,6 +112,7 @@ def new_monitor(check_id, config):
                       'likelihood_threshold': None,
                       'anomaly_threshold': 0.9,
                       'domain': 'localhost',
+                      'protocol': 'http',
                       'nupic_model_params': {'spParams': {'maxBoost': 1.1}}}
     monitor_config.update(config)
 
